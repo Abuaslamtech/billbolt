@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Eimaan Maison",
+    "slug": "eimaan-maison-tracker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#1B4332"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.eimaanmaison.tracker"
+    },
+    "android": {
+      "package": "com.eimaanmaison.tracker",
+      "adaptiveIcon": {
+        "backgroundColor": "#1B4332"
+      }
+    }
+  }
+}

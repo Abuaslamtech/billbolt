@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id           String    @id @default(cuid())
+  name         String    @unique
+  category     String?
+  costPrice    Decimal   @db.Decimal(12, 2)
+  sellingPrice Decimal   @db.Decimal(12, 2)
+  reorderLevel Int       @default(0)
+  openingStock Int       @default(0)
+  createdAt    DateTime  @default(now())
+  sales        Sale[]
+  restocks     Restock[]
+}
+
+model Sale {
+  id        String   @id @default(cuid())
+  date      DateTime
+  cycle     DateTime // first-of-month marker for the 14th–13th cycle this sale falls in
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  qty       Int
+  soldBy    String?
+  unitPrice Decimal  @db.Decimal(12, 2)
+  unitCost  Decimal  @db.Decimal(12, 2)
+  revenue   Decimal  @db.Decimal(12, 2)
+  cost      Decimal  @db.Decimal(12, 2)
+  profit    Decimal  @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([cycle])
+}
+
+model Restock {
+  id          String   @id @default(cuid())
+  date        DateTime
+  cycle       DateTime
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  qty         Int
+  costPerUnit Decimal  @db.Decimal(12, 2)
+  totalCost   Decimal  @db.Decimal(12, 2)
+  createdAt   DateTime @default(now())
+
+  @@index([productId])
+  @@index([cycle])
+}

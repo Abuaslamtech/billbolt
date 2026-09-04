@@ -1,0 +1,10 @@
+{
+  "name": "@billbolt/admin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Admin portal ready to be initialized with Next.js / Vite'",
+    "build": "echo 'Admin portal build placeholder'",
+    "lint": "echo 'Admin portal lint placeholder'"
+  }
+}

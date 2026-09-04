@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body { font-family: Arial, sans-serif; background:#FBF8F1; margin:0; padding:16px; color:#0D2818; }
+    h2 { color:#1B4332; margin-top:0; }
+    .tabs { display:flex; gap:8px; margin-bottom:16px; }
+    .tab { flex:1; text-align:center; padding:10px; border-radius:8px; background:#e7f0e9; cursor:pointer; font-weight:bold; color:#1B4332; }
+    .tab.active { background:#1B4332; color:#fff; }
+    .panel { display:none; }
+    .panel.active { display:block; }
+    label { display:block; margin-top:12px; font-weight:bold; font-size:13px; }
+    input, select { width:100%; padding:10px; margin-top:4px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box; font-size:14px; }
+    button { margin-top:18px; width:100%; padding:12px; background:#BFA046; color:#0D2818; font-weight:bold; border:none; border-radius:8px; cursor:pointer; font-size:15px; }
+    button:disabled { opacity:0.6; }
+    #status { margin-top:12px; font-size:13px; padding:8px; border-radius:6px; display:none; }
+    #status.ok { background:#dff5e1; color:#2E7D32; display:block; }
+    #status.err { background:#fde2e0; color:#C0392B; display:block; }
+  </style>
+</head>
+<body>
+  <h2>Eimaan Maison</h2>
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('sale')">Sale</div>
+    <div class="tab" onclick="showTab('restock')">Restock</div>
+    <div class="tab" onclick="showTab('product')">Product</div>
+  </div>
+
+  <div id="sale" class="panel active">
+    <label>Date</label><input type="date" id="s_date">
+    <label>Product</label><select id="s_product"></select>
+    <label>Qty Sold</label><input type="number" id="s_qty" min="1">
+    <label>Sold By</label><input type="text" id="s_soldBy" placeholder="optional">
+    <button onclick="submitSale()">Log Sale</button>
+  </div>
+
+  <div id="restock" class="panel">
+    <label>Date</label><input type="date" id="r_date">
+    <label>Product</label><select id="r_product"></select>
+    <label>Qty Restocked</label><input type="number" id="r_qty" min="1">
+    <label>Cost per Unit (NGN)</label><input type="number" id="r_cost" min="0">
+    <button onclick="submitRestock()">Log Restock</button>
+  </div>
+
+  <div id="product" class="panel">
+    <label>Product Name</label><input type="text" id="p_name">
+    <label>Category</label><input type="text" id="p_category" placeholder="optional">
+    <label>Cost Price (NGN)</label><input type="number" id="p_cost" min="0">
+    <label>Selling Price (NGN)</label><input type="number" id="p_price" min="0">
+    <label>Reorder Level</label><input type="number" id="p_reorder" min="0">
+    <button onclick="submitProduct()">Add Product</button>
+  </div>
+
+  <div id="status"></div>
+
+<script>
+  function showTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(name).classList.add('active');
+    document.querySelectorAll('.tab')[name === 'sale' ? 0 : name === 'restock' ? 1 : 2].classList.add('active');
+  }
+
+  function today() { return new Date().toISOString().split('T')[0]; }
+  document.getElementById('s_date').value = today();
+  document.getElementById('r_date').value = today();
+
+  google.script.run.withSuccessHandler(fillProducts).getProducts();
+  function fillProducts(list) {
+    ['s_product', 'r_product'].forEach(id => {
+      var sel = document.getElementById(id);
+      sel.innerHTML = '';
+      list.forEach(p => {
+        var opt = document.createElement('option');
+        opt.value = p; opt.textContent = p;
+        sel.appendChild(opt);
+      });
+    });
+  }
+
+  function setStatus(msg, ok) {
+    var el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = ok ? 'ok' : 'err';
+  }
+
+  function submitSale() {
+    var data = {
+      date: document.getElementById('s_date').value,
+      product: document.getElementById('s_product').value,
+      qty: document.getElementById('s_qty').value,
+      soldBy: document.getElementById('s_soldBy').value
+    };
+    google.script.run.withSuccessHandler(function(r){ setStatus(r.message, true); document.getElementById('s_qty').value=''; })
+      .withFailureHandler(function(e){ setStatus(e.message, false); })
+      .submitSale(data);
+  }
+
+  function submitRestock() {
+    var data = {
+      date: document.getElementById('r_date').value,
+      product: document.getElementById('r_product').value,
+      qty: document.getElementById('r_qty').value,
+      cost: document.getElementById('r_cost').value
+    };
+    google.script.run.withSuccessHandler(function(r){ setStatus(r.message, true); document.getElementById('r_qty').value=''; document.getElementById('r_cost').value=''; })
+      .withFailureHandler(function(e){ setStatus(e.message, false); })
+      .submitRestock(data);
+  }
+
+  function submitProduct() {
+    var data = {
+      name: document.getElementById('p_name').value,
+      category: document.getElementById('p_category').value,
+      cost: document.getElementById('p_cost').value,
+      price: document.getElementById('p_price').value,
+      reorder: document.getElementById('p_reorder').value
+    };
+    google.script.run.withSuccessHandler(function(r){ setStatus(r.message, true); document.getElementById('p_name').value=''; })
+      .withFailureHandler(function(e){ setStatus(e.message, false); })
+      .submitProduct(data);
+  }
+</script>
+</body>
+</html>

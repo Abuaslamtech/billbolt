@@ -1,0 +1,10 @@
+{
+  "name": "@billbolt/landing",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Landing page ready to be initialized with Next.js / Astro / Vite'",
+    "build": "echo 'Landing page build placeholder'",
+    "lint": "echo 'Landing page lint placeholder'"
+  }
+}
