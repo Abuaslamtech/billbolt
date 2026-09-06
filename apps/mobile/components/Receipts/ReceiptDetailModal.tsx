@@ -1,22 +1,19 @@
 import React from "react";
 import {
-  Modal,
+Modal,
   View,
   Text,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
-  Image,
-} from "react-native";
+  ActivityIndicator
+} from 'react-native';
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Cancel01Icon,
-  Store01Icon,
-  Location01Icon,
-  Call02Icon,
-  Mail02Icon,
-  Share01Icon,
-} from "@hugeicons/core-free-icons";
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
+import Store01Icon from '@hugeicons/core-free-icons/Store01Icon';
+import Location01Icon from '@hugeicons/core-free-icons/Location01Icon';
+import Call02Icon from '@hugeicons/core-free-icons/Call02Icon';
+import Mail02Icon from '@hugeicons/core-free-icons/Mail02Icon';
+import Share01Icon from '@hugeicons/core-free-icons/Share01Icon';
 import { Receipt } from "@/types/models";
 import { Colors } from "@/lib/colors";
 import { useReceiptDetailModal } from "@/hooks/useReceiptDetailModal";
@@ -24,6 +21,7 @@ import stampPaid from "@/assets/images/stamp_paid.png";
 import billboltLogo from "@/assets/images/icon.png";
 import billboltQr from "@/assets/images/billbolt_qr.png";
 
+import { Image } from 'expo-image';
 interface ReceiptDetailModalProps {
   receipt: Receipt | null;
   visible: boolean;
@@ -116,7 +114,7 @@ export default function ReceiptDetailModal({
                   <Image
                     source={{ uri: businessInfo.logoUrl }}
                     className="w-16 h-16 rounded-xl mb-2.5 bg-white border border-bolt-border"
-                    resizeMode="cover"
+                    contentFit="cover"
                   />
                 ) : (
                   <View className="w-12 h-12 rounded-2xl bg-bolt-light border border-bolt-blue/20 items-center justify-center mb-2.5 shadow-2xs">
@@ -233,33 +231,30 @@ export default function ReceiptDetailModal({
                 </View>
 
                 {/* Items List */}
-                {(receipt.items || []).map((item, index) => {
-                  const qty = item.qty || 1;
-                  return (
-                    <View
-                      key={index}
-                      className="flex-row py-2.5 items-center border-b border-bolt-border/50"
-                    >
-                      <View className="flex-1 pr-2">
-                        <Text
-                          className="font-inter-semibold text-xs text-bolt-graphite"
-                          numberOfLines={2}
-                        >
-                          {item.productName}
-                        </Text>
-                        <Text className="font-inter text-[11px] text-bolt-slate mt-0.5">
-                          {currency}{(item.unitPrice ?? 0).toLocaleString()} each
-                        </Text>
-                      </View>
-                      <Text className="w-12 font-inter-bold text-xs text-bolt-graphite text-center">
-                        x{qty}
+                {receipt.items.map((item, index) => (
+                  <View
+                    key={index}
+                    className="flex-row py-2.5 items-center border-b border-bolt-border/50"
+                  >
+                    <View className="flex-1 pr-2">
+                      <Text
+                        className="font-inter-semibold text-xs text-bolt-graphite"
+                        numberOfLines={2}
+                      >
+                        {item.productName}
                       </Text>
-                      <Text className="w-20 font-poppins-bold text-xs text-bolt-graphite text-right">
-                        {currency}{(item.total ?? 0).toLocaleString()}
+                      <Text className="font-inter text-[11px] text-bolt-slate mt-0.5">
+                        {currency}{item.unitPrice.toLocaleString()} each
                       </Text>
                     </View>
-                  );
-                })}
+                    <Text className="w-12 font-inter-bold text-xs text-bolt-graphite text-center">
+                      x{item.quantity}
+                    </Text>
+                    <Text className="w-20 font-poppins-bold text-xs text-bolt-graphite text-right">
+                      {currency}{item.total.toLocaleString()}
+                    </Text>
+                  </View>
+                ))}
               </View>
 
               {/* ── 4. SUBTOTAL & DISCOUNT (IF APPLICABLE) ── */}
@@ -289,7 +284,7 @@ export default function ReceiptDetailModal({
                       Grand Total
                     </Text>
                     <Text className="font-poppins-bold text-2xl text-bolt-graphite leading-tight mt-0.5">
-                      {currency}{(receipt.total ?? 0).toLocaleString()}
+                      {currency}{receipt.total.toLocaleString()}
                     </Text>
                   </View>
 
@@ -298,7 +293,7 @@ export default function ReceiptDetailModal({
                     <Image
                       source={stampPaid}
                       style={{ width: 105, height: 65, transform: [{ rotate: "-7deg" }] }}
-                      resizeMode="contain"
+                      contentFit="contain"
                     />
                   </View>
                 </View>
@@ -320,7 +315,7 @@ export default function ReceiptDetailModal({
                     <Image
                       source={billboltQr}
                       style={{ width: 54, height: 54 }}
-                      resizeMode="contain"
+                      contentFit="contain"
                     />
                   </View>
 
@@ -330,7 +325,7 @@ export default function ReceiptDetailModal({
                       <Image
                         source={billboltLogo}
                         style={{ width: 14, height: 14, borderRadius: 3 }}
-                        resizeMode="contain"
+                        contentFit="contain"
                       />
                       <Text className="font-poppins-bold text-xs text-bolt-graphite tracking-wide uppercase">
                         Powered by <Text className="text-bolt-blue">Billbolt</Text>

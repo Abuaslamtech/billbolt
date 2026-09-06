@@ -43,7 +43,7 @@ export async function emailSignup(dto: {
   email: string;
   password: string;
   fullName: string;
-  businessName: string;
+  businessName?: string;
   businessType?: string;
   phone?: string;
 }): Promise<AuthResponse> {

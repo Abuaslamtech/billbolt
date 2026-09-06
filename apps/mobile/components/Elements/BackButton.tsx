@@ -2,7 +2,7 @@ import React from "react";
 import { TouchableOpacity, StyleProp, ViewStyle } from "react-native";
 import { router } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { ArrowLeft02Icon } from "@hugeicons/core-free-icons";
+import ArrowLeft02Icon from '@hugeicons/core-free-icons/ArrowLeft02Icon';
 import * as Haptics from "expo-haptics";
 import { Colors } from "@/lib/colors";
 

@@ -1,28 +1,26 @@
 import React from "react";
 import {
-  Image,
-  Linking,
+Linking,
   ScrollView,
   Text,
   TouchableOpacity,
-  View,
-} from "react-native";
+  View
+} from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  ArrowLeft02Icon,
-  ArrowUpRight01Icon,
-  Globe02Icon,
-  Mail02Icon,
-  File02Icon,
-  SecurityCheckIcon,
-} from "@hugeicons/core-free-icons";
+import ArrowLeft02Icon from '@hugeicons/core-free-icons/ArrowLeft02Icon';
+import ArrowUpRight01Icon from '@hugeicons/core-free-icons/ArrowUpRight01Icon';
+import Globe02Icon from '@hugeicons/core-free-icons/Globe02Icon';
+import Mail02Icon from '@hugeicons/core-free-icons/Mail02Icon';
+import File02Icon from '@hugeicons/core-free-icons/File02Icon';
+import SecurityCheckIcon from '@hugeicons/core-free-icons/SecurityCheckIcon';
 
 import { Colors } from "@/lib/colors";
 import BackButton from "@/components/Elements/BackButton";
 import { Shadows } from "@/lib/styles";
 
+import { Image } from 'expo-image';
 const APP_VERSION = "1.0.0";
 
 const billboltLogo = require("@/assets/images/icon.png");
@@ -86,7 +84,7 @@ export default function AboutScreen() {
             <Image
               source={billboltLogo}
               style={{ width: 80, height: 80 }}
-              resizeMode="contain"
+              contentFit="contain"
             />
           </View>
           <Text className="text-2xl font-poppins-bold text-bolt-blue">
@@ -160,7 +158,7 @@ export default function AboutScreen() {
             <Image
               source={atlabxLogo}
               style={{ width: 22, height: 22 }}
-              resizeMode="contain"
+              contentFit="contain"
             />
             <Text className="text-sm font-poppins-bold text-[#0F2A63]">
               AtlabX Technologies

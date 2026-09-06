@@ -1,11 +1,9 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Add01Icon,
-  MinusSignIcon,
-  Delete02Icon,
-} from "@hugeicons/core-free-icons";
+import Add01Icon from '@hugeicons/core-free-icons/Add01Icon';
+import MinusSignIcon from '@hugeicons/core-free-icons/MinusSignIcon';
+import Delete02Icon from '@hugeicons/core-free-icons/Delete02Icon';
 import { Colors } from "@/lib/colors";
 import { formatCurrency } from "@/store/saleStore";
 import { ProductWithStock } from "@/types/models";

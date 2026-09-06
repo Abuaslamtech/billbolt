@@ -6,10 +6,8 @@ import {
   View,
 } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  FingerPrintIcon,
-  ShieldCheckIcon,
-} from "@hugeicons/core-free-icons";
+import FingerPrintIcon from '@hugeicons/core-free-icons/FingerPrintIcon';
+import ShieldCheckIcon from '@hugeicons/core-free-icons/ShieldCheckIcon';
 import * as Haptics from "expo-haptics";
 import { Colors } from "@/lib/colors";
 import { Button } from "./Buton";

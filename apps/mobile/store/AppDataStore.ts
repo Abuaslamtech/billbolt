@@ -71,6 +71,7 @@ interface AppDataState {
     discount?: number;
   }) => Promise<Receipt>;
   updateBusiness: (info: Partial<BusinessInfo>) => Promise<void>;
+  reset: () => void;
 }
 
 export const useAppDataStore = create<AppDataState>((set, get) => ({
@@ -246,5 +247,20 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
   updateBusiness: async (info) => {
     const updated = await saveBusinessInfo(info);
     set({ businessInfo: updated });
+  },
+
+  reset: () => {
+    set({
+      isInitialized: false,
+      isLoading: true,
+      businessInfo: DEFAULT_BUSINESS_INFO,
+      products: [],
+      sales: [],
+      restocks: [],
+      receipts: [],
+      metrics: null,
+      topProducts: [],
+      cycleSummaries: [],
+    });
   },
 }));

@@ -6,11 +6,9 @@ import {
   View,
 } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Rocket01Icon,
-  CheckmarkCircle02Icon,
-  Cancel01Icon,
-} from "@hugeicons/core-free-icons";
+import Rocket01Icon from '@hugeicons/core-free-icons/Rocket01Icon';
+import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
 import * as Haptics from "expo-haptics";
 import Toast from "react-native-toast-message";
 import { Colors } from "@/lib/colors";

@@ -28,6 +28,7 @@ import {
   StockStatus,
 } from '@/types/models';
 import { cycleKey, generateId, generateCleanReceiptNumber } from './cycleUtils';
+import { useAuthStore } from '@/store/authStore';
 
 const KEYS = {
   PRODUCTS: '@billbolt_cache_products',
@@ -252,6 +253,7 @@ export async function createOfflineReceipt(input: {
 
   const discountAmount = Math.max(0, Number(input.discount) || 0);
   const finalTotal = Math.max(0, subtotal - discountAmount);
+  const seller = input.soldBy?.trim() || useAuthStore.getState().user?.fullName?.trim() || 'Owner';
 
   let allocatedDiscount = 0;
   const receiptItems: ReceiptItem[] = [];
@@ -273,7 +275,7 @@ export async function createOfflineReceipt(input: {
     receiptItems.push({
       productId: item.productId,
       productName: item.productName,
-      qty: item.qty,
+      quantity: item.qty,
       unitPrice: item.unitPrice,
       discount: itemDiscount,
       total: netRevenue,
@@ -286,7 +288,7 @@ export async function createOfflineReceipt(input: {
       productId: item.productId,
       productName: item.productName,
       qty: item.qty,
-      soldBy: input.soldBy || 'Staff',
+      soldBy: seller,
       unitPrice: item.unitPrice,
       unitCost: item.unitCost,
       discount: itemDiscount,
@@ -310,7 +312,7 @@ export async function createOfflineReceipt(input: {
     discount: discountAmount > 0 ? discountAmount : undefined,
     total: finalTotal,
     paymentMethod: input.paymentMethod || 'Cash',
-    soldBy: input.soldBy || 'Staff',
+    soldBy: seller,
     notes: input.notes,
     createdAt: now.toISOString(),
   };
@@ -347,4 +349,19 @@ export async function updateOfflineBusinessInfo(
   const updated: BusinessInfo = { ...current, ...info };
   await setCachedBusinessInfo(updated);
   return updated;
+}
+
+export async function clearOfflineCache(): Promise<void> {
+  try {
+    await AsyncStorage.multiRemove([
+      KEYS.PRODUCTS,
+      KEYS.SALES,
+      KEYS.RESTOCKS,
+      KEYS.RECEIPTS,
+      KEYS.BUSINESS,
+      KEYS.METRICS,
+    ]);
+  } catch (err) {
+    console.error('[OfflineCache] Failed to clear offline cache:', err);
+  }
 }

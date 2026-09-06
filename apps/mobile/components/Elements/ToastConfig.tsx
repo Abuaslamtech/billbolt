@@ -1,13 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import {
-  CheckmarkCircle02Icon,
-  AlertCircleIcon,
-  InformationCircleIcon,
-  Alert02Icon,
-  Cancel01Icon,
-} from '@hugeicons/core-free-icons';
+import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
+import AlertCircleIcon from '@hugeicons/core-free-icons/AlertCircleIcon';
+import InformationCircleIcon from '@hugeicons/core-free-icons/InformationCircleIcon';
+import Alert02Icon from '@hugeicons/core-free-icons/Alert02Icon';
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
 import Toast, { BaseToastProps } from 'react-native-toast-message';
 import { Colors } from '@/lib/colors';
 import { Shadows } from "@/lib/styles";

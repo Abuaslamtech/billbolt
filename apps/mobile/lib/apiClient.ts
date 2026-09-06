@@ -4,6 +4,9 @@ import { refreshAccessToken } from '@/services/auth/authService';
 import { shouldProactivelyRefresh } from '@/services/auth/tokenValidation';
 import { useAuthStore } from '@/store/authStore';
 import { useSyncStore } from '@/store/syncStore';
+import { useAppDataStore } from '@/store/AppDataStore';
+import { clearOfflineCache } from '@/services/storage/offlineCache';
+import { clearSyncQueue } from '@/services/sync/syncEngine';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
 
@@ -101,6 +104,10 @@ apiClient.interceptors.response.use(
 /** Hard logout — clears all auth state and navigates to login */
 export function performHardLogout() {
   clearAuthStorage().catch(() => {});
+  clearOfflineCache().catch(() => {});
+  clearSyncQueue().catch(() => {});
+  useAppDataStore.getState().reset();
+  useSyncStore.getState().setPendingCount(0);
   useAuthStore.getState().clearAuth();
   // Lazy import to avoid circular dep
   const { router } = require('expo-router');

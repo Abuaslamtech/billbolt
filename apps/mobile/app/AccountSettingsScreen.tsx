@@ -1,7 +1,6 @@
 import React from "react";
 import {
-  ActivityIndicator,
-  Image,
+ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -12,26 +11,24 @@ import {
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View,
-} from "react-native";
+  View
+} from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Notification03Icon,
-  Mail01Icon,
-  LockPasswordIcon,
-  FingerPrintIcon,
-  Globe02Icon,
-  Delete02Icon,
-  ArrowRight01Icon,
-  Camera01Icon,
-  Edit02Icon,
-  User03Icon,
-  Call02Icon,
-  Cancel01Icon,
-  ShieldCheckIcon,
-} from "@hugeicons/core-free-icons";
+import Notification03Icon from '@hugeicons/core-free-icons/Notification03Icon';
+import Mail01Icon from '@hugeicons/core-free-icons/Mail01Icon';
+import LockPasswordIcon from '@hugeicons/core-free-icons/LockPasswordIcon';
+import FingerPrintIcon from '@hugeicons/core-free-icons/FingerPrintIcon';
+import Globe02Icon from '@hugeicons/core-free-icons/Globe02Icon';
+import Delete02Icon from '@hugeicons/core-free-icons/Delete02Icon';
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
+import Camera01Icon from '@hugeicons/core-free-icons/Camera01Icon';
+import Edit02Icon from '@hugeicons/core-free-icons/Edit02Icon';
+import User03Icon from '@hugeicons/core-free-icons/User03Icon';
+import Call02Icon from '@hugeicons/core-free-icons/Call02Icon';
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
+import ShieldCheckIcon from '@hugeicons/core-free-icons/ShieldCheckIcon';
 import * as Haptics from "expo-haptics";
 
 import { Colors } from "@/lib/colors";
@@ -43,6 +40,7 @@ import { useAccountSettingsScreen } from "@/hooks/useAccountSettingsScreen";
 
 import SettingRow from "@/components/Elements/SettingRow";
 
+import { Image } from 'expo-image';
 export default function AccountSettingsScreen() {
   const {
     user,
@@ -111,7 +109,7 @@ export default function AccountSettingsScreen() {
                   <Image
                     source={{ uri: user.avatarUrl }}
                     className="w-full h-full"
-                    resizeMode="cover"
+                    contentFit="cover"
                   />
                 ) : (
                   <Text className="text-bolt-blue text-xl font-poppins-bold">

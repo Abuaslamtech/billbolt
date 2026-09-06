@@ -1,7 +1,8 @@
 import React from "react";
 import { Modal, View, Text, TouchableOpacity, TouchableWithoutFeedback } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Alert02Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import Alert02Icon from '@hugeicons/core-free-icons/Alert02Icon';
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
 import * as Haptics from "expo-haptics";
 import { Colors } from "@/lib/colors";
 import { Shadows } from "@/lib/styles";

@@ -1,7 +1,8 @@
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { FlashIcon, QrCode01Icon } from "@hugeicons/core-free-icons";
+import FlashIcon from '@hugeicons/core-free-icons/FlashIcon';
+import QrCode01Icon from '@hugeicons/core-free-icons/QrCode01Icon';
 import * as Haptics from "expo-haptics";
 import { Colors } from "@/lib/colors";
 import { Shadows } from "@/lib/styles";

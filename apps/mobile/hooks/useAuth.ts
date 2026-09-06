@@ -9,7 +9,6 @@ import {
   googleLogin,
   logoutApi,
 } from "@/services/auth/authService";
-import { uploadStoreLogo } from "@/services/storage/uploadService";
 import {
   clearAuthStorage,
   persistOnboarded,
@@ -17,19 +16,18 @@ import {
   saveToken,
   saveUserEmail,
 } from "@/services/storage/auth";
-import { saveBusinessInfo } from "@/services/storage/localStorage";
+import { clearOfflineCache } from "@/services/storage/localStorage";
+import { clearSyncQueue } from "@/services/sync/syncEngine";
 import { useAuthStore } from "@/store/authStore";
+import { useAppDataStore } from "@/store/AppDataStore";
+import { useSyncStore } from "@/store/syncStore";
 
 interface SignUpData {
   email: string;
   password: string;
   setLoading: (value: boolean) => void;
   fullName: string;
-  phone: string;
-  businessName: string;
-  businessType: string;
-  avatar?: string | null;
-  storeLogo?: string | null;
+  phone?: string;
 }
 
 interface LinkAccountData {
@@ -52,10 +50,6 @@ export default function useAuth() {
     setLoading,
     fullName,
     phone,
-    businessName,
-    businessType,
-    avatar,
-    storeLogo,
   }: SignUpData) => {
     setLoading(true);
     try {
@@ -64,8 +58,6 @@ export default function useAuth() {
         password,
         fullName,
         phone,
-        businessName,
-        businessType,
       });
 
       // Save tokens to SecureStore for persistent login
@@ -74,34 +66,22 @@ export default function useAuth() {
       await saveUserEmail(email);
       await persistOnboarded();
 
-      // If user uploaded a store logo, upload it to Cloudinary now
-      const logoToUpload = storeLogo || avatar;
-      if (logoToUpload) {
-        try {
-          const uploadRes = await uploadStoreLogo(logoToUpload, authRes.accessToken);
-          if (uploadRes?.logoUrl) {
-            if (authRes.user?.business) {
-              authRes.user.business.logoUrl = uploadRes.logoUrl;
-            }
-            await saveBusinessInfo({ logoUrl: uploadRes.logoUrl });
-          }
-        } catch (uploadErr) {
-          console.warn("Store logo upload failed after signup:", uploadErr);
-        }
-      }
-
       // Update store
       setToken(authRes.accessToken);
       setUser(authRes.user as any);
 
+      // Clean & initialize fresh app data for the newly registered account
+      useAppDataStore.getState().reset();
+      await useAppDataStore.getState().init();
+
       Toast.show({
         type: "success",
-        text1: "Registration successful",
-        text2: "Welcome to BillBolt!",
+        text1: "Account created",
+        text2: "Let's set up your shop.",
         position: "top",
       });
 
-      router.replace("/(main)");
+      router.replace("/(auth)/SetupShopWizard");
     } catch (error: any) {
       console.error("Signup error:", error);
       const msg =
@@ -140,6 +120,10 @@ export default function useAuth() {
       setToken(authRes.accessToken);
       setUser(authRes.user as any);
 
+      // 4. Reset & initialize fresh app data for the signed-in account
+      useAppDataStore.getState().reset();
+      await useAppDataStore.getState().init();
+
       Toast.show({
         type: "success",
         text1: "Sign In Successful",
@@ -175,11 +159,6 @@ export default function useAuth() {
   } = {}) => {
     try {
       setIsGoogleLoading(true);
-      GoogleSignin.configure({
-        webClientId:
-          "381178769112-s39q38b0r1hkuvg974li9fnnp5b2lir2.apps.googleusercontent.com",
-        offlineAccess: true,
-      });
       await GoogleSignin.hasPlayServices();
       try {
         await GoogleSignin.signOut();
@@ -210,12 +189,15 @@ export default function useAuth() {
       if (authRes.needsBusinessSetup || !authRes.user.business) {
         Toast.show({
           type: "info",
-          text1: "Welcome to BillBolt!",
-          text2: "Let's set up your store to get started.",
+          text1: "Welcome to Billbolt",
+          text2: "Let's set up your shop.",
           position: "top",
         });
-        router.replace("/(auth)/SetupBusinessScreen");
+        router.replace("/(auth)/SetupShopWizard");
       } else {
+        useAppDataStore.getState().reset();
+        await useAppDataStore.getState().init();
+
         Toast.show({
           type: "success",
           text1: "Signed In with Google",
@@ -285,7 +267,13 @@ export default function useAuth() {
         await GoogleSignin.signOut();
       } catch {}
 
-      await clearAuthStorage();
+      await Promise.allSettled([
+        clearAuthStorage(),
+        clearOfflineCache(),
+        clearSyncQueue(),
+      ]);
+      useAppDataStore.getState().reset();
+      useSyncStore.getState().setPendingCount(0);
       clearAuth();
 
       Toast.show({
@@ -297,7 +285,13 @@ export default function useAuth() {
       router.replace("/(auth)");
     } catch (error) {
       console.error("Logout failed:", error);
-      await clearAuthStorage();
+      await Promise.allSettled([
+        clearAuthStorage(),
+        clearOfflineCache(),
+        clearSyncQueue(),
+      ]);
+      useAppDataStore.getState().reset();
+      useSyncStore.getState().setPendingCount(0);
       clearAuth();
       router.replace("/(auth)");
     }

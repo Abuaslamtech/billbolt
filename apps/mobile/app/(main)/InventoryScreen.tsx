@@ -11,19 +11,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Search01Icon,
-  Add01Icon,
-  PackageReceiveIcon,
-  Alert02Icon,
-  Package01Icon,
-  CancelCircleIcon,
-  Cancel01Icon,
-  ArrowDown01Icon,
-  ArrowRight01Icon,
-  CheckmarkCircle02Icon,
-  QrCode01Icon,
-} from "@hugeicons/core-free-icons";
+import Search01Icon from '@hugeicons/core-free-icons/Search01Icon';
+import Add01Icon from '@hugeicons/core-free-icons/Add01Icon';
+import PackageReceiveIcon from '@hugeicons/core-free-icons/PackageReceiveIcon';
+import Alert02Icon from '@hugeicons/core-free-icons/Alert02Icon';
+import Package01Icon from '@hugeicons/core-free-icons/Package01Icon';
+import CancelCircleIcon from '@hugeicons/core-free-icons/CancelCircleIcon';
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
+import ArrowDown01Icon from '@hugeicons/core-free-icons/ArrowDown01Icon';
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
+import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
+import QrCode01Icon from '@hugeicons/core-free-icons/QrCode01Icon';
 
 import Header from "@/components/Header";
 import ProductQrLabelModal from "@/components/QR/ProductQrLabelModal";

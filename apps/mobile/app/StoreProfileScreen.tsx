@@ -1,44 +1,36 @@
 import React from "react";
 import {
   ActivityIndicator,
-  Image,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View,
-} from "react-native";
+  View
+} from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Store01Icon,
-  Camera01Icon,
-  Location01Icon,
-  Call02Icon,
-  Mail01Icon,
-  MoneyExchange01Icon,
-  Tick02Icon,
-  Cancel01Icon,
-  Edit02Icon,
-  User03Icon,
-} from "@hugeicons/core-free-icons";
-import BackButton from "@/components/Elements/BackButton";
+import Store01Icon from '@hugeicons/core-free-icons/Store01Icon';
+import Camera01Icon from '@hugeicons/core-free-icons/Camera01Icon';
+import Location01Icon from '@hugeicons/core-free-icons/Location01Icon';
+import Call02Icon from '@hugeicons/core-free-icons/Call02Icon';
+import Mail01Icon from '@hugeicons/core-free-icons/Mail01Icon';
+import MoneyExchange01Icon from '@hugeicons/core-free-icons/MoneyExchange01Icon';
+import SquareLock02Icon from '@hugeicons/core-free-icons/SquareLock02Icon';
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
+import Edit02Icon from '@hugeicons/core-free-icons/Edit02Icon';
 import { Button } from "@/components/Elements/Buton";
 import SettingRow from "@/components/Elements/SettingRow";
 import ScreenHeader from "@/components/Elements/ScreenHeader";
 import { Colors } from "@/lib/colors";
 import { getCurrencySymbol } from "@/lib/formatters";
-import {
-  useStoreProfileScreen,
-  CURRENCIES,
-} from "@/hooks/useStoreProfileScreen";
+import { useStoreProfileScreen } from "@/hooks/useStoreProfileScreen";
 import { useAppDataStore } from "@/store/AppDataStore";
 
+import { Image } from 'expo-image';
 export default function StoreProfileScreen() {
   const { businessInfo } = useAppDataStore();
   const {
@@ -52,14 +44,10 @@ export default function StoreProfileScreen() {
     setEmail,
     address,
     setAddress,
-    currency,
-    setCurrency,
     logoUrl,
     initials,
     isUploadingLogo,
     isSaving,
-    showCurrencyModal,
-    setShowCurrencyModal,
     isEditStoreOpen,
     setIsEditStoreOpen,
     openEditModal,
@@ -117,7 +105,7 @@ export default function StoreProfileScreen() {
                   <Image
                     source={{ uri: logoUrl }}
                     className="w-full h-full"
-                    resizeMode="cover"
+                    contentFit="cover"
                   />
                 ) : (
                   <Text className="text-bolt-blue text-xl font-poppins-bold">
@@ -180,18 +168,29 @@ export default function StoreProfileScreen() {
         <Text className="text-xs font-inter-semibold text-bolt-slate uppercase tracking-widest mx-4 mt-6 mb-2">
           Financial Settings
         </Text>
-        <View className="mx-4 bg-bolt-card rounded-2xl border border-bolt-border overflow-hidden">
-          <SettingRow
-            icon={MoneyExchange01Icon}
-            label="Default Currency"
-            description={CURRENCIES.find((c) => c.code === savedCurrency)?.name || `${getCurrencySymbol(savedCurrency)} (Default)`}
-            onPress={() => setShowCurrencyModal(true)}
-            right={
-              <View className="bg-bolt-light border border-bolt-blue/20 rounded-md px-2 py-0.5">
-                <Text className="text-2xs font-inter-bold text-bolt-blue">Change</Text>
+        <View className="mx-4 bg-bolt-card rounded-2xl border border-bolt-border p-4 shadow-2xs">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-3">
+              <View className="w-10 h-10 rounded-xl bg-bolt-light items-center justify-center">
+                <HugeiconsIcon icon={MoneyExchange01Icon} size={20} color={Colors.primary} />
               </View>
-            }
-          />
+              <View>
+                <Text className="text-sm font-inter-semibold text-bolt-graphite">
+                  Store Currency
+                </Text>
+                <Text className="text-xs font-inter text-bolt-slate">
+                  {savedCurrency} ({getCurrencySymbol(savedCurrency)})
+                </Text>
+              </View>
+            </View>
+            <View className="flex-row items-center gap-1 bg-bolt-surface border border-bolt-border rounded-lg px-2.5 py-1">
+              <HugeiconsIcon icon={SquareLock02Icon} size={12} color={Colors.slate} />
+              <Text className="text-2xs font-inter-medium text-bolt-slate">Locked</Text>
+            </View>
+          </View>
+          <Text className="text-2xs font-inter text-bolt-slate mt-2.5 leading-4">
+            Currency is permanently locked to protect product pricing and historical sales reporting.
+          </Text>
         </View>
       </ScrollView>
 
@@ -324,55 +323,6 @@ export default function StoreProfileScreen() {
             </View>
           </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
-      </Modal>
-
-      {/* ── CURRENCY SELECTION MODAL ── */}
-      <Modal visible={showCurrencyModal} animationType="slide" transparent>
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white rounded-t-3xl p-5 pb-8 max-h-[80%]">
-            <View className="flex-row items-center justify-between pb-3 border-b border-bolt-divider mb-3">
-              <Text className="font-poppins-bold text-base text-bolt-graphite">
-                Select Store Currency
-              </Text>
-              <TouchableOpacity
-                onPress={() => setShowCurrencyModal(false)}
-                className="w-8 h-8 rounded-full bg-bolt-surface border border-bolt-border items-center justify-center"
-              >
-                <HugeiconsIcon icon={Cancel01Icon} size={16} color={Colors.slate} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-              {CURRENCIES.map((curr) => {
-                const isSelected = currency === curr.code;
-                return (
-                  <TouchableOpacity
-                    key={curr.code}
-                    onPress={() => {
-                      setCurrency(curr.code);
-                      setShowCurrencyModal(false);
-                      handleSave(curr.code); // Auto-save when currency is changed
-                    }}
-                    className={`flex-row items-center justify-between px-4 py-3.5 rounded-xl mb-1.5 ${
-                      isSelected ? "bg-bolt-light border border-bolt-blue/30" : "bg-bolt-surface border border-transparent"
-                    }`}
-                    accessibilityRole="button"
-                    accessibilityLabel={curr.label}
-                  >
-                    <View>
-                      <Text className={`font-inter-semibold text-sm ${isSelected ? "text-bolt-blue" : "text-bolt-graphite"}`}>
-                        {curr.name} ({curr.code})
-                      </Text>
-                      <Text className="text-xs font-inter text-bolt-slate">{curr.label}</Text>
-                    </View>
-                    {isSelected && (
-                      <HugeiconsIcon icon={Tick02Icon} size={18} color={Colors.primary} />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </View>
       </Modal>
     </SafeAreaView>
   );

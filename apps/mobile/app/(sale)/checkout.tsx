@@ -9,16 +9,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Add01Icon,
-  Cancel01Icon,
-  FlashIcon,
-  Calendar03Icon,
-  Tag01Icon,
-  UserIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from "@hugeicons/core-free-icons";
+import Add01Icon from '@hugeicons/core-free-icons/Add01Icon';
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
+import FlashIcon from '@hugeicons/core-free-icons/FlashIcon';
+import Calendar03Icon from '@hugeicons/core-free-icons/Calendar03Icon';
+import Tag01Icon from '@hugeicons/core-free-icons/Tag01Icon';
+import UserIcon from '@hugeicons/core-free-icons/UserIcon';
+import ChevronDownIcon from '@hugeicons/core-free-icons/ChevronDownIcon';
+import ChevronUpIcon from '@hugeicons/core-free-icons/ChevronUpIcon';
 import BackButton from "@/components/Elements/BackButton";
 import ConfirmDialog from "@/components/Elements/ConfirmDialog";
 import QuantityPickerModal from "@/components/Elements/QuantityPickerModal";

@@ -1,7 +1,8 @@
-import { View, Text, Image } from 'react-native'
+import { View, Text } from 'react-native'
 import React from 'react'
 import logo from "@/assets/images/icon.png"
 
+import { Image } from 'expo-image';
 export default function AuthHeader({title, label}:{title: string, label: string}) {
   return (
      <View className="w-full flex gap-2">
@@ -9,7 +10,7 @@ export default function AuthHeader({title, label}:{title: string, label: string}
               <Image
                 source={logo}
                 className="w-20 h-20 rounded-2xl"
-                resizeMode="contain"
+                contentFit="contain"
               />
             </View>
             <View className="w-[90%] flex items-center justify-center gap-1 m-auto px-6 ">

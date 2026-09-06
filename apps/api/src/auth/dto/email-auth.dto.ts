@@ -18,9 +18,9 @@ export class EmailSignupDto {
   @IsNotEmpty()
   fullName: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  businessName: string;
+  businessName?: string;
 
   @IsOptional()
   @IsString()

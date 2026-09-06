@@ -1,10 +1,8 @@
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  PackageAdd01Icon,
-  PackageReceiveIcon,
-} from "@hugeicons/core-free-icons";
+import PackageAdd01Icon from '@hugeicons/core-free-icons/PackageAdd01Icon';
+import PackageReceiveIcon from '@hugeicons/core-free-icons/PackageReceiveIcon';
 import * as Haptics from "expo-haptics";
 import { Colors } from "@/lib/colors";
 

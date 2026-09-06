@@ -1,12 +1,12 @@
 import google from "@/assets/images/google.png";
+import { Image } from 'expo-image';
 import React from "react";
 import {
   GestureResponderEvent,
-  Image,
   Text,
   TouchableOpacity,
-  View,
-} from "react-native";
+  View
+} from 'react-native';
 
 // types
 interface AuthFooterTypes {
@@ -41,7 +41,7 @@ export function AuthFooter({
         onPress={onPress}
         disabled={disabled}
       >
-        <Image source={google} resizeMode="contain" className="w-8 h-8" />
+        <Image source={google} contentFit="contain" className="w-8 h-8" />
         <Text className="text-bolt-graphite font-semibold font-inter-medium">
           {label}
         </Text>

@@ -33,10 +33,11 @@ import {
   createOfflineReceipt,
   createOfflineRestock,
   updateOfflineBusinessInfo,
+  clearOfflineCache,
 } from './offlineCache';
 import { enqueueSyncAction } from '@/services/sync/syncEngine';
 
-export { BusinessInfo, DEFAULT_BUSINESS_INFO };
+export { BusinessInfo, DEFAULT_BUSINESS_INFO, clearOfflineCache };
 
 export async function getBusinessInfo(): Promise<BusinessInfo> {
   const isOnline = useSyncStore.getState().isOnline;
@@ -233,7 +234,7 @@ export async function getReceipts(): Promise<Receipt[]> {
 
   try {
     const { data } = await apiClient.get('/receipts?limit=100');
-    const list = data.receipts ?? data;
+    const list: Receipt[] = data.receipts ?? data;
     if (Array.isArray(list)) {
       await setCachedReceipts(list);
       return list;
@@ -258,20 +259,10 @@ export async function createReceipt(input: {
 
   if (isOnline) {
     try {
-      const { data } = await apiClient.post('/receipts', {
-        ...input,
-        items: input.items.map((i) => ({ productId: i.productId, qty: i.qty })),
-      });
-      const inputDiscount = Math.max(0, Number(input.discount) || 0);
-      const enrichedReceipt: Receipt = {
-        ...data,
-        discount: inputDiscount > 0 ? inputDiscount : (data.discount || undefined),
-        subtotal: data.subtotal ?? (data.total + inputDiscount),
-        total: inputDiscount > 0 ? Math.max(0, (data.subtotal ?? data.total) - inputDiscount) : data.total,
-      };
+      const { data } = await apiClient.post<Receipt>('/receipts', input);
       const cached = await getCachedReceipts();
-      await setCachedReceipts([enrichedReceipt, ...cached.filter((r) => r.id !== enrichedReceipt.id)]);
-      return enrichedReceipt;
+      await setCachedReceipts([data, ...cached.filter((r) => r.id !== data.id)]);
+      return data;
     } catch (err: any) {
       // Only fall back to offline if it was a genuine network error (no response).
       // For server errors (4xx/5xx), rethrow so the caller knows something is wrong

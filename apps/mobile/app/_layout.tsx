@@ -1,9 +1,12 @@
 import "../global.css";
+import { cssInterop } from "nativewind";
+import { Image } from "expo-image";
+
+cssInterop(Image, { className: "style" });
+
 import {
   Inter_400Regular,
-  Inter_500Medium,
   Inter_600SemiBold,
-  Inter_700Bold,
 } from "@expo-google-fonts/inter";
 import {
   Poppins_400Regular,
@@ -15,11 +18,19 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import "react-native-reanimated";
 import Toast from "react-native-toast-message";
 import { toastConfig } from "@/components/Elements/ToastConfig";
 import { startNetworkSyncListener } from "@/services/sync/syncEngine";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+
+// Configure Google Sign-In once at app startup
+GoogleSignin.configure({
+  webClientId:
+    "381178769112-s39q38b0r1hkuvg974li9fnnp5b2lir2.apps.googleusercontent.com",
+  offlineAccess: true,
+});
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,26 +41,17 @@ export default function RootLayout() {
     Poppins_600SemiBold,
     Poppins_700Bold,
     Inter_400Regular,
-    Inter_500Medium,
     Inter_600SemiBold,
-    Inter_700Bold,
   });
 
-  const [allowRender, setAllowRender] = useState(false);
-
+  // Hide the native splash immediately on first render so our custom
+  // splash screen (index.tsx) is visible for the full boot sequence.
   useEffect(() => {
     const t = setTimeout(() => {
-      setAllowRender(true);
       SplashScreen.hideAsync().catch(() => {});
-    }, 400);
-
-    if (fontsLoaded || fontsError) {
-      SplashScreen.hideAsync().catch(() => {});
-      clearTimeout(t);
-    }
-
+    }, 16); // single frame — show native splash just long enough to avoid a white flash
     return () => clearTimeout(t);
-  }, [fontsLoaded, fontsError]);
+  }, []);
 
   // Mount offline network sync listener
   useEffect(() => {
@@ -59,9 +61,8 @@ export default function RootLayout() {
     };
   }, []);
 
-  if (!fontsLoaded && !fontsError && !allowRender) {
-    return null;
-  }
+  // Always render — fonts load in background, Poppins/Inter have system fallbacks
+  // so text is readable even before font files finish loading.
 
   return (
     <>

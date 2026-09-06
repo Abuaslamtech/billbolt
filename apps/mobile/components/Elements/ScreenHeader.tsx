@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Home01Icon } from '@hugeicons/core-free-icons';
+import Home01Icon from '@hugeicons/core-free-icons/Home01Icon';
 import { router } from 'expo-router';
 import BackButton from './BackButton';
 import { Colors } from '@/lib/colors';

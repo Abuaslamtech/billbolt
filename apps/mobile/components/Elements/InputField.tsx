@@ -1,18 +1,17 @@
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Mail02Icon,
-  SquareLock02Icon,
-  UserIcon,
-  Call02Icon,
-  Store01Icon,
-  Location01Icon,
-  Grid02Icon,
-  ViewIcon,
-  ViewOffSlashIcon,
-} from "@hugeicons/core-free-icons";
+import Mail02Icon from '@hugeicons/core-free-icons/Mail02Icon';
+import SquareLock02Icon from '@hugeicons/core-free-icons/SquareLock02Icon';
+import UserIcon from '@hugeicons/core-free-icons/UserIcon';
+import Call02Icon from '@hugeicons/core-free-icons/Call02Icon';
+import Store01Icon from '@hugeicons/core-free-icons/Store01Icon';
+import Location01Icon from '@hugeicons/core-free-icons/Location01Icon';
+import Grid02Icon from '@hugeicons/core-free-icons/Grid02Icon';
+import ViewIcon from '@hugeicons/core-free-icons/ViewIcon';
+import ViewOffSlashIcon from '@hugeicons/core-free-icons/ViewOffSlashIcon';
 import React, { useState } from "react";
 import {
   KeyboardTypeOptions,
+  Platform,
   TextInput,
   TouchableOpacity,
   View,
@@ -37,6 +36,36 @@ const ICON_MAP: Record<string, any> = {
   category: Grid02Icon,
 };
 
+// Android ReactTextInputManager AUTOFILL_HINTS_MAP compatibility
+const AUTOCOMPLETE_MAP: Record<string, any> = {
+  email: "email",
+  "email-address": "email",
+  password: "password",
+  "current-password": "password",
+  "new-password": "password-new",
+  "password-new": "password-new",
+  username: "username",
+  name: "name",
+  "full-name": "name",
+  tel: "tel",
+  phone: "tel",
+  off: "off",
+};
+
+const TEXT_CONTENT_TYPE_MAP: Record<string, any> = {
+  email: "emailAddress",
+  "email-address": "emailAddress",
+  password: "password",
+  "current-password": "password",
+  "new-password": "newPassword",
+  "password-new": "newPassword",
+  username: "username",
+  name: "name",
+  tel: "telephoneNumber",
+  phone: "telephoneNumber",
+  off: "none",
+};
+
 // types
 interface InputFieldProps {
   icon?: any;
@@ -49,7 +78,13 @@ interface InputFieldProps {
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
   autoComplete?: string;
+  textContentType?: any;
+  importantForAutofill?: "auto" | "no" | "noExcludeDescendants" | "yes" | "yesExcludeDescendants";
   onBlur?: (e: any) => void;
+  onSubmitEditing?: () => void;
+  returnKeyType?: "done" | "go" | "next" | "search" | "send";
+  blurOnSubmit?: boolean;
+  autoFocus?: boolean;
 }
 
 export function InputField({
@@ -63,25 +98,34 @@ export function InputField({
   keyboardType,
   autoCapitalize,
   autoComplete,
+  textContentType,
+  importantForAutofill,
   onBlur,
+  onSubmitEditing,
+  returnKeyType,
+  blurOnSubmit,
+  autoFocus,
 }: InputFieldProps) {
   const [isFocused, setIsFocused] = useState(false);
   const resolvedIcon = typeof icon === "string" ? ICON_MAP[icon] || icon : icon;
 
+  const resolvedAutoComplete = autoComplete ? (AUTOCOMPLETE_MAP[autoComplete] || autoComplete) : undefined;
+  const resolvedTextContentType = textContentType || (autoComplete ? TEXT_CONTENT_TYPE_MAP[autoComplete] : undefined);
+  const resolvedImportantForAutofill = importantForAutofill || (autoComplete && autoComplete !== "off" ? "yes" : undefined);
+
   return (
     <View className="w-full">
       <View
-        className={`h-14 flex-row items-center px-4 rounded-2xl ${
-          isFocused ? "border-2 border-bolt-blue" : "border border-bolt-border"
+        className={`h-14 flex-row items-center px-4 rounded-2xl border-2 ${
+          isFocused ? "border-bolt-blue" : "border-bolt-border"
         }`}
         style={
-          isFocused
+          isFocused && Platform.OS === "ios"
             ? {
                 shadowColor: Colors.primary,
                 shadowOffset: { width: 0, height: 0 },
                 shadowOpacity: 0.12,
                 shadowRadius: 8,
-                elevation: 2,
               }
             : undefined
         }
@@ -98,11 +142,18 @@ export function InputField({
           onChangeText={onChangeText}
           secureTextEntry={isPassword && !showPassword}
           placeholder={placeholder}
-          className="flex-1 ml-3 font-inter text-bolt-graphite text-base"
+          className="flex-1 ml-3 font-inter text-bolt-graphite text-base bg-transparent"
           placeholderTextColor={Colors.slate}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
+          autoComplete={resolvedAutoComplete}
+          textContentType={resolvedTextContentType}
+          importantForAutofill={resolvedImportantForAutofill}
           autoCorrect={false}
+          autoFocus={autoFocus}
+          onSubmitEditing={onSubmitEditing}
+          returnKeyType={returnKeyType}
+          blurOnSubmit={blurOnSubmit}
           onFocus={() => setIsFocused(true)}
           onBlur={(e) => {
             setIsFocused(false);

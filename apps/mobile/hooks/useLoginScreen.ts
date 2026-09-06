@@ -1,17 +1,8 @@
-import { useEffect, useState } from "react";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { useState } from "react";
 import useAuth from "./useAuth";
 import { useBiometric } from "./useBiometric";
 
 export function useLoginScreen() {
-  // Initialize google sign-in module
-  useEffect(() => {
-    GoogleSignin.configure({
-      webClientId:
-        "381178769112-s39q38b0r1hkuvg974li9fnnp5b2lir2.apps.googleusercontent.com",
-      offlineAccess: true,
-    });
-  }, []);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

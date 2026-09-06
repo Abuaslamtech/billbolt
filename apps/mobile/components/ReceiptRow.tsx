@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
 import { Receipt } from "@/types/models";
 import { formatCurrency } from "@/lib/formatters";
 import { formatReceiptNo } from "@/services/storage/cycleUtils";

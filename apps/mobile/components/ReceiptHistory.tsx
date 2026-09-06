@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Search01Icon,
-  Cancel01Icon,
-  Invoice02Icon,
-  ArrowRight01Icon,
-  ArrowDown01Icon,
-} from "@hugeicons/core-free-icons";
+import Search01Icon from '@hugeicons/core-free-icons/Search01Icon';
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
+import Invoice02Icon from '@hugeicons/core-free-icons/Invoice02Icon';
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
+import ArrowDown01Icon from '@hugeicons/core-free-icons/ArrowDown01Icon';
 import * as Haptics from "expo-haptics";
 import { useAppDataStore } from "@/store/AppDataStore";
 import { Receipt } from "@/types/models";

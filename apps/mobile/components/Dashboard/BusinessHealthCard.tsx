@@ -1,11 +1,9 @@
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  HeartCheckIcon,
-  ShieldCheckIcon,
-  ArrowRight01Icon,
-} from "@hugeicons/core-free-icons";
+import HeartCheckIcon from '@hugeicons/core-free-icons/HeartCheckIcon';
+import ShieldCheckIcon from '@hugeicons/core-free-icons/ShieldCheckIcon';
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
 import { router } from "expo-router";
 import { Colors } from "@/lib/colors";
 import { DashboardMetrics } from "@/types/models";

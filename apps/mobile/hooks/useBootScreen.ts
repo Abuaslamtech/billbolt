@@ -16,8 +16,11 @@ import {
   saveRefreshToken,
   saveToken,
 } from "@/services/storage/auth";
+import { clearOfflineCache } from "@/services/storage/offlineCache";
+import { clearSyncQueue } from "@/services/sync/syncEngine";
 import { useAppDataStore } from "@/store/AppDataStore";
 import { useAuthStore } from "@/store/authStore";
+import { useSyncStore } from "@/store/syncStore";
 import { BIOMETRIC_KEY } from "@/lib/constants";
 
 const waitMinimum = async (startTime: number, minMs = 1200) => {
@@ -80,7 +83,13 @@ export function useBootScreen() {
   };
 
   const handleUsePassword = async () => {
-    await clearAuthStorage();
+    await Promise.allSettled([
+      clearAuthStorage(),
+      clearOfflineCache(),
+      clearSyncQueue(),
+    ]);
+    useAppDataStore.getState().reset();
+    useSyncStore.getState().setPendingCount(0);
     useAuthStore.getState().clearAuth();
     setIsLocked(false);
     router.replace("/(auth)");
@@ -175,12 +184,24 @@ export function useBootScreen() {
               } catch (refreshErr: any) {
                 console.log("[Boot] Refresh failed:", refreshErr?.message);
                 if (refreshErr?.response?.status === 401 || refreshErr?.response?.status === 403) {
-                  await clearAuthStorage();
+                  await Promise.allSettled([
+                    clearAuthStorage(),
+                    clearOfflineCache(),
+                    clearSyncQueue(),
+                  ]);
+                  useAppDataStore.getState().reset();
+                  useSyncStore.getState().setPendingCount(0);
                   accessToken = null;
                 }
               }
             } else {
-              await clearAuthStorage();
+              await Promise.allSettled([
+                clearAuthStorage(),
+                clearOfflineCache(),
+                clearSyncQueue(),
+              ]);
+              useAppDataStore.getState().reset();
+              useSyncStore.getState().setPendingCount(0);
               accessToken = null;
             }
           }
@@ -197,8 +218,8 @@ export function useBootScreen() {
               if (!profile.business) {
                 await waitMinimum(startTime);
                 if (!isMounted) return;
-                console.log("[Boot] Navigating to SetupBusinessScreen");
-                router.replace("/(auth)/SetupBusinessScreen");
+                console.log("[Boot] Navigating to SetupShopWizard");
+                router.replace("/(auth)/SetupShopWizard");
                 return;
               }
 
@@ -213,7 +234,13 @@ export function useBootScreen() {
             } catch (profileErr: any) {
               console.log("[Boot] Profile fetch error:", profileErr?.message);
               if (profileErr?.response?.status === 401 || profileErr?.response?.status === 403) {
-                await clearAuthStorage();
+                await Promise.allSettled([
+                  clearAuthStorage(),
+                  clearOfflineCache(),
+                  clearSyncQueue(),
+                ]);
+                useAppDataStore.getState().reset();
+                useSyncStore.getState().setPendingCount(0);
                 accessToken = null;
               } else {
                 // Offline / network timeout — load cached user profile and enter app

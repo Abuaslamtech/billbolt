@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import Toast from "react-native-toast-message";
@@ -6,15 +6,6 @@ import { useAppDataStore } from "@/store/AppDataStore";
 import { useAuthStore } from "@/store/authStore";
 import { saveBusinessInfo } from "@/services/storage/localStorage";
 import { uploadStoreLogo } from "@/services/storage/uploadService";
-
-export const CURRENCIES = [
-  { code: "NGN", label: "NGN (₦)", name: "Nigerian Naira" },
-  { code: "USD", label: "USD ($)", name: "US Dollar" },
-  { code: "GBP", label: "GBP (£)", name: "British Pound" },
-  { code: "EUR", label: "EUR (€)", name: "Euro" },
-  { code: "GHS", label: "GHS (₵)", name: "Ghanaian Cedi" },
-  { code: "KES", label: "KES (KSh)", name: "Kenyan Shilling" },
-];
 
 export function useStoreProfileScreen() {
   const { businessInfo, refresh } = useAppDataStore();
@@ -33,22 +24,9 @@ export function useStoreProfileScreen() {
 
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   
   // Modal State for editing
   const [isEditStoreOpen, setIsEditStoreOpen] = useState(false);
-
-  useEffect(() => {
-    if (businessInfo && !isEditStoreOpen) {
-      setName(businessInfo.name || "");
-      setType(businessInfo.type || "");
-      setPhone(businessInfo.phone || "");
-      setEmail(businessInfo.email || "");
-      setAddress(businessInfo.address || "");
-      setCurrency(businessInfo.currency || "NGN");
-      setLogoUrl(businessInfo.logoUrl || user?.business?.logoUrl || null);
-    }
-  }, [businessInfo, user?.business?.logoUrl, isEditStoreOpen]);
 
   const openEditModal = () => {
     // Reset to current saved data before opening
@@ -92,16 +70,18 @@ export function useStoreProfileScreen() {
       const res = await uploadStoreLogo(localUri);
       if (res.success && res.logoUrl) {
         setLogoUrl(res.logoUrl);
-        await saveBusinessInfo({ logoUrl: res.logoUrl });
 
-        if (user?.business) {
-          setUser({
-            business: {
-              ...user.business,
-              logoUrl: res.logoUrl,
-            },
-          });
-        }
+        // Instantly update Zustand AppDataStore so Header and all screens reflect the new logo
+        await useAppDataStore.getState().updateBusiness({ logoUrl: res.logoUrl });
+
+        setUser({
+          business: {
+            ...(user?.business || {}),
+            logoUrl: res.logoUrl,
+          } as any,
+        });
+
+        await refresh();
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Toast.show({
@@ -123,7 +103,7 @@ export function useStoreProfileScreen() {
     }
   };
 
-  const handleSave = async (overrideCurrency?: string) => {
+  const handleSave = async () => {
     if (!name.trim()) {
       Toast.show({
         type: "error",
@@ -143,7 +123,7 @@ export function useStoreProfileScreen() {
         phone: phone.trim(),
         email: email.trim(),
         address: address.trim(),
-        currency: typeof overrideCurrency === 'string' ? overrideCurrency : currency,
+        currency,
         logoUrl,
       });
 
@@ -169,7 +149,7 @@ export function useStoreProfileScreen() {
         text2: "Your changes have been saved successfully.",
       });
       await refresh();
-    } catch (err) {
+    } catch {
       Toast.show({
         type: "error",
         text1: "Save Failed",
@@ -201,13 +181,10 @@ export function useStoreProfileScreen() {
     address,
     setAddress,
     currency,
-    setCurrency,
     logoUrl,
     initials,
     isUploadingLogo,
     isSaving,
-    showCurrencyModal,
-    setShowCurrencyModal,
     isEditStoreOpen,
     setIsEditStoreOpen,
     openEditModal,

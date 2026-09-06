@@ -2,12 +2,10 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  CheckmarkCircle02Icon,
-  Invoice02Icon,
-  Add01Icon,
-  Home01Icon,
-} from "@hugeicons/core-free-icons";
+import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
+import Invoice02Icon from '@hugeicons/core-free-icons/Invoice02Icon';
+import Add01Icon from '@hugeicons/core-free-icons/Add01Icon';
+import Home01Icon from '@hugeicons/core-free-icons/Home01Icon';
 import ReceiptDetailModal from "@/components/Receipts/ReceiptDetailModal";
 import ScreenHeader from "@/components/Elements/ScreenHeader";
 import { Colors } from "@/lib/colors";

@@ -179,14 +179,17 @@ export class AuthService {
         },
       });
 
-      const business = await tx.business.create({
-        data: {
-          name: dto.businessName.trim(),
-          type: dto.businessType?.trim() || null,
-          phone,
-          ownerId: user.id,
-        },
-      });
+      let business: any = null;
+      if (dto.businessName?.trim()) {
+        business = await tx.business.create({
+          data: {
+            name: dto.businessName.trim(),
+            type: dto.businessType?.trim() || null,
+            phone,
+            ownerId: user.id,
+          },
+        });
+      }
 
       return { user, business };
     });

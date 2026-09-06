@@ -8,11 +8,9 @@ import {
   ScrollView,
 } from 'react-native';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import {
-  Cancel01Icon,
-  Share01Icon,
-  Download01Icon,
-} from '@hugeicons/core-free-icons';
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
+import Share01Icon from '@hugeicons/core-free-icons/Share01Icon';
+import Download01Icon from '@hugeicons/core-free-icons/Download01Icon';
 import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
 import Toast from 'react-native-toast-message';

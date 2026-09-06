@@ -6,7 +6,7 @@ import {
   View,
 } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Notification03Icon } from "@hugeicons/core-free-icons";
+import Notification03Icon from '@hugeicons/core-free-icons/Notification03Icon';
 import * as Haptics from "expo-haptics";
 import { Colors } from "@/lib/colors";
 import { Button } from "./Buton";

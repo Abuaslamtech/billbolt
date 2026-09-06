@@ -16,9 +16,9 @@ module.exports = {
         "poppins-semibold": ["Poppins_600SemiBold"],
         "poppins-bold": ["Poppins_700Bold"],
         inter: ["Inter_400Regular"],
-        "inter-medium": ["Inter_500Medium"],
+        "inter-medium": ["Inter_600SemiBold"],
         "inter-semibold": ["Inter_600SemiBold"],
-        "inter-bold": ["Inter_700Bold"],
+        "inter-bold": ["Inter_600SemiBold"],
       },
       colors: {
         "bolt-blue": "#0052CC",

@@ -1,23 +1,20 @@
 import React, { useRef, useState } from "react";
 import {
-  Animated,
+Animated,
   Dimensions,
   FlatList,
-  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
   Text,
   TouchableOpacity,
-  View,
-} from "react-native";
+  View
+} from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  ArrowRight01Icon,
-  Rocket01Icon,
-} from "@hugeicons/core-free-icons";
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
+import Rocket01Icon from '@hugeicons/core-free-icons/Rocket01Icon';
 import * as Haptics from "expo-haptics";
 import ReanimatedAnimated, {
   useAnimatedStyle,
@@ -29,6 +26,7 @@ import { persistOnboarded } from "@/services/storage/auth";
 import { Colors } from "@/lib/colors";
 import NotificationPrimerModal from "@/components/Elements/NotificationPrimerModal";
 
+import { Image } from 'expo-image';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface SlideData {
@@ -162,7 +160,7 @@ export default function OnboardingScreen() {
                 <Image
                   source={item.image}
                   className="w-full h-full"
-                  resizeMode="contain"
+                  contentFit="contain"
                 />
               </View>
 

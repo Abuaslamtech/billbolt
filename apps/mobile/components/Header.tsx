@@ -4,25 +4,23 @@ import { useAppDataStore } from "@/store/AppDataStore";
 import { useSyncStore } from "@/store/syncStore";
 import { processSyncQueue } from "@/services/sync/syncEngine";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Settings02Icon,
-  CloudOffIcon,
-  CloudUploadIcon,
-} from "@hugeicons/core-free-icons";
+import Settings02Icon from '@hugeicons/core-free-icons/Settings02Icon';
+import CloudOffIcon from '@hugeicons/core-free-icons/CloudOffIcon';
+import CloudUploadIcon from '@hugeicons/core-free-icons/CloudUploadIcon';
 import React, { useState } from "react";
 import {
-  Image,
-  Modal,
+Modal,
   Pressable,
   Text,
   TouchableOpacity,
   View,
-  ActivityIndicator,
-} from "react-native";
+  ActivityIndicator
+} from 'react-native';
 import DropdownMenu from "./Elements/DropdownMenu";
 import Toast from "react-native-toast-message";
 import { Colors } from "@/lib/colors";
 
+import { Image } from 'expo-image';
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
   "Jan","Feb","Mar","Apr","May","Jun",
@@ -101,7 +99,7 @@ const Header = () => {
             <Image
               source={{ uri: storeLogo }}
               className="w-10 h-10 rounded-xl bg-white border border-bolt-border"
-              resizeMode="cover"
+              contentFit="cover"
             />
           ) : (
             <View className="w-10 h-10 rounded-xl bg-bolt-blue items-center justify-center shadow-2xs">

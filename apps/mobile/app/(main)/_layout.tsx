@@ -3,12 +3,10 @@ import { Tabs } from "expo-router";
 import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Home01Icon,
-  Invoice01Icon,
-  Package01Icon,
-  Analytics01Icon,
-} from "@hugeicons/core-free-icons";
+import Home01Icon from '@hugeicons/core-free-icons/Home01Icon';
+import Invoice01Icon from '@hugeicons/core-free-icons/Invoice01Icon';
+import Package01Icon from '@hugeicons/core-free-icons/Package01Icon';
+import Analytics01Icon from '@hugeicons/core-free-icons/Analytics01Icon';
 import * as Haptics from "expo-haptics";
 import { Colors } from "@/lib/colors";
 

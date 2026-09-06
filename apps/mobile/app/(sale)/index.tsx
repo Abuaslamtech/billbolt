@@ -10,18 +10,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Cancel01Icon,
-  Add01Icon,
-  MinusSignIcon,
-  Delete02Icon,
-  Search01Icon,
-  ShoppingCart01Icon,
-  ArrowRight02Icon,
-  Package01Icon,
-  QrCode01Icon,
-  Edit02Icon,
-} from "@hugeicons/core-free-icons";
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
+import Add01Icon from '@hugeicons/core-free-icons/Add01Icon';
+import MinusSignIcon from '@hugeicons/core-free-icons/MinusSignIcon';
+import Delete02Icon from '@hugeicons/core-free-icons/Delete02Icon';
+import Search01Icon from '@hugeicons/core-free-icons/Search01Icon';
+import ShoppingCart01Icon from '@hugeicons/core-free-icons/ShoppingCart01Icon';
+import ArrowRight02Icon from '@hugeicons/core-free-icons/ArrowRight02Icon';
+import Package01Icon from '@hugeicons/core-free-icons/Package01Icon';
+import QrCode01Icon from '@hugeicons/core-free-icons/QrCode01Icon';
+import Edit02Icon from '@hugeicons/core-free-icons/Edit02Icon';
 import * as Haptics from "expo-haptics";
 import BackButton from "@/components/Elements/BackButton";
 import ConfirmDialog from "@/components/Elements/ConfirmDialog";

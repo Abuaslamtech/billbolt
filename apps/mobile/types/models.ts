@@ -54,8 +54,7 @@ export interface Restock {
 export interface ReceiptItem {
   productId: string;
   productName: string;
-  qty: number;
-  quantity?: number;
+  quantity: number;
   unitPrice: number;
   discount?: number;
   total: number;

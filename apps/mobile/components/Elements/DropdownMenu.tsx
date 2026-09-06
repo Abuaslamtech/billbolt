@@ -1,11 +1,9 @@
 import useAuth from "@/hooks/useAuth";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Store01Icon,
-  UserIcon,
-  InformationCircleIcon,
-  Logout01Icon,
-} from "@hugeicons/core-free-icons";
+import Store01Icon from '@hugeicons/core-free-icons/Store01Icon';
+import UserIcon from '@hugeicons/core-free-icons/UserIcon';
+import InformationCircleIcon from '@hugeicons/core-free-icons/InformationCircleIcon';
+import Logout01Icon from '@hugeicons/core-free-icons/Logout01Icon';
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";

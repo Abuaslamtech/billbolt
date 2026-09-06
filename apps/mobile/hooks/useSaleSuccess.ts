@@ -41,7 +41,7 @@ export function useSaleSuccess() {
   const totalUnits = useMemo(() => {
     if (!items) return 0;
     return items.reduce(
-      (sum, item) => sum + (item.qty || item.quantity || 1),
+      (sum, item) => sum + item.quantity,
       0
     );
   }, [items]);

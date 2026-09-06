@@ -37,7 +37,7 @@ interface SaleState {
   // Customer & Payment
   customerName: string;
   customerPhone: string;
-  soldBy: string;
+  soldBy?: string;
   paymentMethod: "Cash" | "Transfer" | "Card";
   isSubmitting: boolean;
 
@@ -104,7 +104,7 @@ export const useSaleStore = create<SaleState>((set, get) => ({
 
   customerName: "",
   customerPhone: "",
-  soldBy: "Staff",
+  soldBy: undefined,
   paymentMethod: "Transfer",
   isSubmitting: false,
 
@@ -245,7 +245,7 @@ export const useSaleStore = create<SaleState>((set, get) => ({
       selectedCategory: "All",
       customerName: "",
       customerPhone: "",
-      soldBy: "Staff",
+      soldBy: undefined,
       paymentMethod: "Transfer",
       isSubmitting: false,
       isDiscountOpen: false,
@@ -299,12 +299,14 @@ export const useSaleStore = create<SaleState>((set, get) => ({
     set({ isSubmitting: true });
 
     try {
-      let effectiveDate: string | undefined;
+      let effectiveDate: string;
       if (state.datePreset === "yesterday") {
         effectiveDate = new Date(Date.now() - 86400000).toISOString();
       } else if (state.datePreset === "custom") {
         const parsed = new Date(state.customDateInput);
-        effectiveDate = isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+        effectiveDate = isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+      } else {
+        effectiveDate = new Date().toISOString();
       }
 
       const discountAmount = state.getDiscountAmount();
@@ -317,7 +319,7 @@ export const useSaleStore = create<SaleState>((set, get) => ({
         customerName: state.customerName.trim() || "Walk-in Customer",
         customerPhone: state.customerPhone.trim() || undefined,
         paymentMethod: state.paymentMethod,
-        soldBy: state.soldBy,
+        soldBy: state.soldBy?.trim() || undefined,
         date: effectiveDate,
         discount: discountAmount > 0 ? discountAmount : undefined,
         notes: state.isHistorical ? "Historical record" : undefined,

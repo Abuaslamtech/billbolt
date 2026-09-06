@@ -11,19 +11,17 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Cancel01Icon,
-  Add01Icon,
-  MinusSignIcon,
-  Delete02Icon,
-  Search01Icon,
-  Package01Icon,
-  PackageReceiveIcon,
-  QrCode01Icon,
-  CheckmarkCircle02Icon,
-  ArrowLeft01Icon,
-  CheckmarkBadge01Icon,
-} from "@hugeicons/core-free-icons";
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
+import Add01Icon from '@hugeicons/core-free-icons/Add01Icon';
+import MinusSignIcon from '@hugeicons/core-free-icons/MinusSignIcon';
+import Delete02Icon from '@hugeicons/core-free-icons/Delete02Icon';
+import Search01Icon from '@hugeicons/core-free-icons/Search01Icon';
+import Package01Icon from '@hugeicons/core-free-icons/Package01Icon';
+import PackageReceiveIcon from '@hugeicons/core-free-icons/PackageReceiveIcon';
+import QrCode01Icon from '@hugeicons/core-free-icons/QrCode01Icon';
+import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
+import ArrowLeft01Icon from '@hugeicons/core-free-icons/ArrowLeft01Icon';
+import CheckmarkBadge01Icon from '@hugeicons/core-free-icons/CheckmarkBadge01Icon';
 import * as Haptics from "expo-haptics";
 import Toast from "react-native-toast-message";
 

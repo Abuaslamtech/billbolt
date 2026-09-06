@@ -38,11 +38,28 @@ export class ReceiptService {
       where: { businessId },
     });
 
-    const recordDate = dto.date ? new Date(dto.date) : new Date();
-    const finalDate = isNaN(recordDate.getTime()) ? new Date() : recordDate;
+    if (!dto.items || dto.items.length === 0) {
+      throw new BadRequestException('A receipt must contain at least one item');
+    }
+
+    if (!dto.date) {
+      throw new BadRequestException('Transaction date is required');
+    }
+    const finalDate = new Date(dto.date);
+    if (isNaN(finalDate.getTime())) {
+      throw new BadRequestException('Invalid transaction date');
+    }
     const dateStr = finalDate.toISOString().split('T')[0];
     const cycle = cycleKey(finalDate);
-    const soldBy = dto.soldBy ?? 'Staff';
+
+    let soldBy = dto.soldBy?.trim();
+    if (!soldBy || soldBy.toLowerCase() === 'staff') {
+      const user = await this.prisma.user.findUnique({
+        where: { id: ownerId },
+        select: { fullName: true },
+      });
+      soldBy = user?.fullName?.trim() || 'Owner';
+    }
 
     const receiptItems: Array<{
       productId: string;
@@ -78,14 +95,19 @@ export class ReceiptService {
       if (!product)
         throw new BadRequestException(`Product ${item.productId} not found`);
 
-      const lineTotal = item.qty * product.sellingPrice;
-      const lineCost = item.qty * product.costPrice;
+      const itemQty = Number(item.qty);
+      if (!itemQty || isNaN(itemQty) || itemQty <= 0) {
+        throw new BadRequestException(`Invalid quantity for product ${product.name}`);
+      }
+
+      const lineTotal = itemQty * product.sellingPrice;
+      const lineCost = itemQty * product.costPrice;
       subtotal += lineTotal;
 
       receiptItems.push({
         productId: product.id,
         productName: product.name,
-        quantity: item.qty,
+        quantity: itemQty,
         unitPrice: product.sellingPrice,
         discount: 0,
         total: lineTotal,
@@ -97,7 +119,7 @@ export class ReceiptService {
         productName: product.name,
         date: dateStr,
         cycle,
-        qty: item.qty,
+        qty: itemQty,
         soldBy,
         unitPrice: product.sellingPrice,
         unitCost: product.costPrice,

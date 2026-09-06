@@ -1,11 +1,9 @@
 import React from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  TradeUpIcon,
-  Package01Icon,
-  ArrowRight01Icon,
-} from "@hugeicons/core-free-icons";
+import TradeUpIcon from '@hugeicons/core-free-icons/TradeUpIcon';
+import Package01Icon from '@hugeicons/core-free-icons/Package01Icon';
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
 import { useAppDataStore } from "@/store/AppDataStore";
 import { router } from "expo-router";
 import { Colors } from "@/lib/colors";

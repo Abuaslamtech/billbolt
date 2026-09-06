@@ -10,13 +10,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  TradeUpIcon,
-  PieChartIcon,
-  CheckmarkCircle02Icon,
-  Alert02Icon,
-  HelpCircleIcon,
-} from "@hugeicons/core-free-icons";
+import TradeUpIcon from '@hugeicons/core-free-icons/TradeUpIcon';
+import PieChartIcon from '@hugeicons/core-free-icons/PieChartIcon';
+import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
+import Alert02Icon from '@hugeicons/core-free-icons/Alert02Icon';
+import HelpCircleIcon from '@hugeicons/core-free-icons/HelpCircleIcon';
 
 import Header from "@/components/Header";
 import { useAppDataStore } from "@/store/AppDataStore";

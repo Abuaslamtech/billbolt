@@ -10,14 +10,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Add01Icon,
-  Tick01Icon,
-  CheckmarkCircle02Icon,
-  Download01Icon,
-  Share01Icon,
-  Home01Icon,
-} from "@hugeicons/core-free-icons";
+import Add01Icon from '@hugeicons/core-free-icons/Add01Icon';
+import Tick01Icon from '@hugeicons/core-free-icons/Tick01Icon';
+import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
+import Download01Icon from '@hugeicons/core-free-icons/Download01Icon';
+import Share01Icon from '@hugeicons/core-free-icons/Share01Icon';
+import Home01Icon from '@hugeicons/core-free-icons/Home01Icon';
 import { router } from "expo-router";
 
 import BackButton from "@/components/Elements/BackButton";

@@ -3,6 +3,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsArray,
+  ArrayNotEmpty,
   ValidateNested,
   IsNumber,
   IsPositive,
@@ -32,6 +33,7 @@ export class CreateReceiptDto {
   customerPhone?: string;
 
   @IsArray()
+  @ArrayNotEmpty({ message: 'Receipt must contain at least one item' })
   @ValidateNested({ each: true })
   @Type(() => ReceiptItemDto)
   items: ReceiptItemDto[];
@@ -42,15 +44,15 @@ export class CreateReceiptDto {
 
   @IsOptional()
   @IsString()
-  soldBy?: string;
+  soldBy: string;
 
   @IsOptional()
   @IsString()
   notes?: string;
 
-  @IsOptional()
   @IsString()
-  date?: string;
+  @IsNotEmpty({ message: 'Transaction date is required' })
+  date: string;
 
   @IsOptional()
   @IsNumber()

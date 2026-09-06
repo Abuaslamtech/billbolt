@@ -1,61 +1,68 @@
-import { HugeiconsIcon } from "@hugeicons/react-native";
-import { ArrowLeft02Icon } from "@hugeicons/core-free-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import ArrowLeft02Icon from "@hugeicons/core-free-icons/ArrowLeft02Icon";
 import { Colors } from "@/lib/colors";
 
-interface stepType {
+interface ProgressIndicatorProps {
   step?: number;
-  setStep: React.Dispatch<React.SetStateAction<1 | 2>>;
+  totalSteps?: number;
+  onBack?: () => void;
+  title?: string;
+  subtitle?: string;
 }
 
-export function ProgressIndicator({ step = 1, setStep }: stepType) {
+export function ProgressIndicator({
+  step = 1,
+  totalSteps,
+  onBack,
+  title,
+  subtitle,
+}: ProgressIndicatorProps) {
   return (
-    <>
-      {/* steps indicator */}
-      <View className="w-full flex-row items-center justify-center mb-6">
-        <View className="flex-row items-center">
-          <View
-            className={`w-8 h-8 rounded-full items-center justify-center ${
-              step >= 1 ? "bg-bolt-blue" : "bg-bolt-disabled"
-            }`}
-          >
-            <Text className="text-white font-semibold text-sm">1</Text>
-          </View>
-          <View
-            className={`w-16 h-1 ${
-              step >= 2 ? "bg-bolt-blue" : "bg-bolt-disabled"
-            }`}
-          />
-          <View
-            className={`w-8 h-8 rounded-full items-center justify-center ${
-              step >= 2 ? "bg-bolt-blue" : "bg-bolt-disabled"
-            }`}
-          >
-            <Text className="text-white font-semibold text-sm">2</Text>
-          </View>
+    <View className="w-full mb-6">
+      {/* Step dots or progress bar if multi-step */}
+      {totalSteps && totalSteps > 1 ? (
+        <View className="flex-row items-center justify-center mb-6 gap-2">
+          {Array.from({ length: totalSteps }).map((_, index) => {
+            const current = index + 1;
+            const isCompleted = step >= current;
+            return (
+              <View
+                key={index}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  isCompleted
+                    ? "w-8 bg-bolt-blue"
+                    : "w-4 bg-bolt-disabled"
+                }`}
+              />
+            );
+          })}
         </View>
-      </View>
+      ) : null}
 
-      {/* header */}
-      <View className="items-center">
-        {step === 2 && (
+      {/* Header text */}
+      <View className="items-center relative px-8">
+        {onBack ? (
           <TouchableOpacity
-            onPress={() => setStep(1)}
-            className="absolute left-0 top-0 p-2"
+            onPress={onBack}
+            className="absolute left-0 top-1 p-2 active:opacity-70"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <HugeiconsIcon icon={ArrowLeft02Icon} size={24} color={Colors.primary} />
+            <HugeiconsIcon icon={ArrowLeft02Icon} size={24} color={Colors.graphite} />
           </TouchableOpacity>
-        )}
-        <Text className="text-3xl font-poppins-bold text-center text-bolt-graphite">
-          {step === 1 ? "Create Account" : "Business Info"}
-        </Text>
-        <Text className="text-bolt-slate font-inter-medium text-center mt-2">
-          {step === 1
-            ? "Enter your personal details"
-            : "Tell us about your business"}
-        </Text>
+        ) : null}
+        {title ? (
+          <Text className="text-2xl font-poppins-bold text-center text-bolt-graphite">
+            {title}
+          </Text>
+        ) : null}
+        {subtitle ? (
+          <Text className="text-bolt-slate font-inter text-xs text-center mt-1 leading-5">
+            {subtitle}
+          </Text>
+        ) : null}
       </View>
-    </>
+    </View>
   );
 }

@@ -1,19 +1,17 @@
 import React from "react";
 import {
-  KeyboardAvoidingView,
   Platform,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  ArrowLeft02Icon,
-  CheckmarkCircle02Icon,
-} from "@hugeicons/core-free-icons";
+import ArrowLeft02Icon from '@hugeicons/core-free-icons/ArrowLeft02Icon';
+import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
 
 import { InputField } from "@/components/Elements/InputField";
 import { Button } from "@/components/Elements/Buton";
@@ -31,15 +29,14 @@ export default function ForgotPasswordScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      <KeyboardAwareScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: "space-between" }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        enableOnAndroid={false}
+        extraScrollHeight={20}
       >
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: "space-between" }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
           <View>
             {/* Back Button */}
             <TouchableOpacity
@@ -120,8 +117,7 @@ export default function ForgotPasswordScreen() {
               </TouchableOpacity>
             </View>
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }

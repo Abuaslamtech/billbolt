@@ -1,5 +1,5 @@
 import React from "react";
-import { Image, View, Text } from "react-native";
+import { View, Text } from 'react-native';
 import { StatusBar } from "expo-status-bar";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 
@@ -9,6 +9,7 @@ import AppLockOverlay from "@/components/Elements/AppLockOverlay";
 import { useBootScreen } from "@/hooks/useBootScreen";
 import { Shadows } from "@/lib/styles";
 
+import { Image } from 'expo-image';
 export default function Index() {
   const {
     isLocked,
@@ -46,7 +47,7 @@ export default function Index() {
             <Image
               source={logo}
               className="w-full h-full"
-              resizeMode="contain"
+              contentFit="contain"
             />
           </View>
         </Animated.View>
@@ -80,7 +81,7 @@ export default function Index() {
           <Image
             source={atlabxLogo}
             className="w-6 h-6"
-            resizeMode="contain"
+            contentFit="contain"
           />
           <Text className="text-sm font-poppins-bold text-[#0F2A63] tracking-wide">
             AtlabX Technologies

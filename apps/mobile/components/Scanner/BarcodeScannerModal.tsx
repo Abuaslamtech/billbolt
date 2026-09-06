@@ -11,15 +11,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import {
-  Cancel01Icon,
-  FlashIcon,
-  FlashOffIcon,
-  QrCode01Icon,
-  CheckmarkCircle02Icon,
-  AlertCircleIcon,
-  Camera01Icon,
-} from '@hugeicons/core-free-icons';
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
+import FlashIcon from '@hugeicons/core-free-icons/FlashIcon';
+import FlashOffIcon from '@hugeicons/core-free-icons/FlashOffIcon';
+import QrCode01Icon from '@hugeicons/core-free-icons/QrCode01Icon';
+import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
+import AlertCircleIcon from '@hugeicons/core-free-icons/AlertCircleIcon';
+import Camera01Icon from '@hugeicons/core-free-icons/Camera01Icon';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   useSharedValue,

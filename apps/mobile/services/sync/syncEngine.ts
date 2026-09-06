@@ -60,12 +60,27 @@ async function savePendingQueue(queue: SyncQueueItem[]): Promise<void> {
   }
 }
 
+export async function clearSyncQueue(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(SYNC_QUEUE_KEY);
+    useSyncStore.getState().setPendingCount(0);
+  } catch (err) {
+    console.error('[SyncEngine] Failed to clear sync queue:', err);
+  }
+}
+
 export async function enqueueSyncAction(
   type: SyncActionType,
   payload: any,
   tempEntityId?: string,
 ): Promise<void> {
   const queue = await getPendingQueue();
+
+  // Prevent duplicate enqueue if the exact same entity is already in the queue
+  if (tempEntityId && queue.some((item) => item.tempEntityId === tempEntityId)) {
+    return;
+  }
+
   const item: SyncQueueItem = {
     id: generateId('sync_item'),
     type,
@@ -88,21 +103,34 @@ export async function enqueueSyncAction(
 
 export async function processSyncQueue(): Promise<void> {
   if (isProcessing) return;
-
-  const queue = await getPendingQueue();
-  if (queue.length === 0) {
-    useSyncStore.getState().setPendingCount(0);
-    return;
-  }
-
+  // Acquire mutex immediately and synchronously before any asynchronous pause
   isProcessing = true;
   useSyncStore.getState().setIsSyncing(true);
 
-  const initialCount = queue.length;
-  const remainingQueue: SyncQueueItem[] = [...queue];
-  const idMap: Record<string, string> = {}; // Maps tempId -> serverId
+  let remainingQueue: SyncQueueItem[] = [];
 
   try {
+    const queue = await getPendingQueue();
+    if (queue.length === 0) {
+      useSyncStore.getState().setPendingCount(0);
+      return;
+    }
+
+    // Deduplicate by tempEntityId to prevent executing identical actions
+    const seenTempIds = new Set<string>();
+    const deduplicatedQueue: SyncQueueItem[] = [];
+    for (const item of queue) {
+      if (item.tempEntityId) {
+        if (seenTempIds.has(item.tempEntityId)) continue;
+        seenTempIds.add(item.tempEntityId);
+      }
+      deduplicatedQueue.push(item);
+    }
+
+    const initialCount = deduplicatedQueue.length;
+    remainingQueue = [...deduplicatedQueue];
+    const idMap: Record<string, string> = {}; // Maps tempId -> serverId
+
     while (remainingQueue.length > 0) {
       const currentItem = remainingQueue[0];
 

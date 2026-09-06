@@ -1,9 +1,7 @@
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  CheckmarkCircle02Icon,
-  Login01Icon,
-  HourglassIcon,
-} from "@hugeicons/core-free-icons";
+import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
+import Login01Icon from '@hugeicons/core-free-icons/Login01Icon';
+import HourglassIcon from '@hugeicons/core-free-icons/HourglassIcon';
 import React from "react";
 import {
   ActivityIndicator,

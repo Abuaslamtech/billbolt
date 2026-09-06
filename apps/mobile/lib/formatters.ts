@@ -1,22 +1,15 @@
 import { useAppDataStore } from "@/store/AppDataStore";
+import { getCurrencySymbolFromCode, getDeviceLocale } from "@/lib/localization";
 
 /**
  * Single source of truth for currency, date/time, and string formatting across Billbolt.
  */
 
-export const CURRENCY_SYMBOLS: Record<string, string> = {
-  NGN: "₦",
-  USD: "$",
-  GBP: "£",
-  EUR: "€",
-  GHS: "₵",
-  KES: "KSh",
-};
-
 export function getCurrencySymbol(currencyCodeOrSymbol?: string | null): string {
-  if (!currencyCodeOrSymbol) return "₦";
-  // If it's already a symbol (e.g., ₦), CURRENCY_SYMBOLS won't match and we'll just return it.
-  return CURRENCY_SYMBOLS[currencyCodeOrSymbol.toUpperCase()] || currencyCodeOrSymbol;
+  if (currencyCodeOrSymbol) {
+    return getCurrencySymbolFromCode(currencyCodeOrSymbol);
+  }
+  return getDeviceLocale().currencySymbol || "";
 }
 
 /**
@@ -26,7 +19,7 @@ export function formatCurrency(n: number | null | undefined): string {
   const currencyCode = useAppDataStore.getState().businessInfo?.currency;
   const currencySymbol = getCurrencySymbol(currencyCode);
   if (n == null || isNaN(Number(n))) return `${currencySymbol}0`;
-  return `${currencySymbol}${Number(n).toLocaleString("en-NG")}`;
+  return `${currencySymbol}${Number(n).toLocaleString()}`;
 }
 
 /**

@@ -10,7 +10,9 @@ import {
   Platform,
 } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Cancel01Icon, Package01Icon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
+import Package01Icon from '@hugeicons/core-free-icons/Package01Icon';
+import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
 import * as Haptics from "expo-haptics";
 import Toast from "react-native-toast-message";
 import { useAppDataStore } from "@/store/AppDataStore";

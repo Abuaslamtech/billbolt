@@ -39,7 +39,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/billbolt.png",
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }

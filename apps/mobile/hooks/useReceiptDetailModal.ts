@@ -55,12 +55,10 @@ export function useReceiptDetailModal({ receipt, onClose }: UseReceiptDetailModa
     return trimmed || null;
   }, [receipt?.customerPhone]);
 
-  // Clean soldBy: null if default "Staff" placeholder (Pillar 1)
   const soldBy = useMemo(() => {
     if (!receipt?.soldBy) return null;
     const trimmed = receipt.soldBy.trim();
-    if (!trimmed || trimmed.toLowerCase() === "staff") return null;
-    return trimmed;
+    return trimmed || null;
   }, [receipt?.soldBy]);
 
   const handleShareImage = async () => {

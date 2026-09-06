@@ -1,19 +1,16 @@
 import React from "react";
 import {
-  Image,
-  Pressable,
+Pressable,
   Text,
   TouchableOpacity,
-  View,
-} from "react-native";
+  View
+} from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  FingerPrintIcon,
-  AlertCircleIcon,
-  LockPasswordIcon,
-} from "@hugeicons/core-free-icons";
+import FingerPrintIcon from '@hugeicons/core-free-icons/FingerPrintIcon';
+import AlertCircleIcon from '@hugeicons/core-free-icons/AlertCircleIcon';
+import LockPasswordIcon from '@hugeicons/core-free-icons/LockPasswordIcon';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -24,6 +21,7 @@ import logo from "@/assets/images/icon.png";
 import { Colors } from "@/lib/colors";
 import { Shadows } from "@/lib/styles";
 
+import { Image } from 'expo-image';
 interface AppLockOverlayProps {
   onUnlock: () => void;
   onUsePassword?: () => void;
@@ -73,7 +71,7 @@ export default function AppLockOverlay({
           <Image
             source={logo}
             className="w-full h-full"
-            resizeMode="contain"
+            contentFit="contain"
           />
         </View>
 

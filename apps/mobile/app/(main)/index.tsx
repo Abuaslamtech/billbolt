@@ -9,12 +9,10 @@ import {
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Alert02Icon,
-  ArrowRight01Icon,
-  FlashIcon,
-  Invoice02Icon,
-} from "@hugeicons/core-free-icons";
+import Alert02Icon from '@hugeicons/core-free-icons/Alert02Icon';
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
+import FlashIcon from '@hugeicons/core-free-icons/FlashIcon';
+import Invoice02Icon from '@hugeicons/core-free-icons/Invoice02Icon';
 import { router } from "expo-router";
 import { Colors } from "@/lib/colors";
 import { formatCurrency, formatTime, formatPaymentMethod } from "@/lib/formatters";
