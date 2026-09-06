@@ -37,3 +37,12 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+
+# Google Cloud Service Account Keys (Private Credentials)
+billbolt-*.json
+*-firebase-adminsdk-*.json
+
+# Never ignore Google Services config
+!google-services.json
+!android/app/google-services.json
+

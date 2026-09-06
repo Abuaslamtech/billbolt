@@ -40,11 +40,19 @@ coverage/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-# Google Cloud Service Account Keys
-*-*.json
+# Google Cloud Service Account Keys (Private Credentials)
+*-firebase-adminsdk-*.json
+*-*.iam.gserviceaccount.com.json
+*service-account*.json
+billbolt-*.json
+
+# Never ignore Google Services config
+!google-services.json
+!**/google-services.json
 
 # Mobile Assets
 !apps/mobile/assets/**
 !apps/mobile/android/app/src/main/res/**
+
 
 
