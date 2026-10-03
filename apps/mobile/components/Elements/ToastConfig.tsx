@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
 import AlertCircleIcon from '@hugeicons/core-free-icons/AlertCircleIcon';
@@ -9,8 +9,6 @@ import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
 import Toast, { BaseToastProps } from 'react-native-toast-message';
 import { Colors } from '@/lib/colors';
 import { Shadows } from "@/lib/styles";
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface CustomToastCardProps extends BaseToastProps {
   variant: 'success' | 'error' | 'info' | 'warning';
@@ -48,13 +46,15 @@ const toastThemes = {
 };
 
 const CustomToastCard: React.FC<CustomToastCardProps> = ({ variant, text1, text2, onPress }) => {
+  const { width } = useWindowDimensions();
   const theme = toastThemes[variant];
+  const toastWidth = Math.min(width * 0.92, 440);
 
   return (
     <TouchableOpacity
       activeOpacity={0.9}
       onPress={onPress || (() => Toast.hide())}
-      style={[Shadows.card, { borderColor: theme.borderColor, width: SCREEN_WIDTH * 0.9 }]}
+      style={[Shadows.card, { borderColor: theme.borderColor, width: toastWidth }]}
       className="min-h-14 flex-row items-center bg-bolt-card py-3 px-3.5 rounded-2xl border"
     >
       {/* Icon Badge */}

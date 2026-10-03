@@ -5,18 +5,19 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import TradeUpIcon from '@hugeicons/core-free-icons/TradeUpIcon';
+import TradeDownIcon from '@hugeicons/core-free-icons/TradeDownIcon';
 import PieChartIcon from '@hugeicons/core-free-icons/PieChartIcon';
 import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
 import Alert02Icon from '@hugeicons/core-free-icons/Alert02Icon';
 import HelpCircleIcon from '@hugeicons/core-free-icons/HelpCircleIcon';
 
 import Header from "@/components/Header";
+import { ReportScreenSkeleton } from "@/components/Elements/Skeleton";
 import { useAppDataStore } from "@/store/AppDataStore";
 import { getCurrencySymbol } from "@/lib/formatters";
 import { Colors } from "@/lib/colors";
@@ -39,11 +40,14 @@ export default function ReportScreen() {
     netCashFlow,
     topMoneyMakers,
     fmt,
-    fmtFull,
+    fmtSigned,
   } = useReportScreen();
 
   const hasSales = selectedStats.revenue > 0;
-  const isHealthyMargin = selectedStats.margin >= 15;
+  const isLoss = selectedStats.profit < 0;
+  const isProfit = selectedStats.profit > 0;
+  const isBreakEven = hasSales && selectedStats.profit === 0;
+  const isHealthyMargin = selectedStats.margin >= 15 && !isLoss;
   const timeframeLabel =
     timeframe === "this_month"
       ? "This Month"
@@ -129,12 +133,7 @@ export default function ReportScreen() {
         </View>
 
         {loading ? (
-          <View className="py-16 items-center">
-            <ActivityIndicator color={Colors.primary} />
-            <Text className="font-inter text-xs text-bolt-slate mt-2">
-              Loading reports...
-            </Text>
-          </View>
+          <ReportScreenSkeleton />
         ) : (
           <>
             {/* ── 2. The Profit Card (The Bottom Line) ─────────────────── */}
@@ -159,21 +158,29 @@ export default function ReportScreen() {
 
                   {hasSales ? (
                     <View
-                      className={`px-2.5 py-0.5 rounded-full border flex-row items-center gap-1 ${isHealthyMargin
+                      className={`px-2.5 py-0.5 rounded-full border flex-row items-center gap-1 ${
+                        isLoss
+                          ? "bg-bolt-danger-bg border-bolt-danger-border"
+                          : isHealthyMargin
                           ? "bg-bolt-success-bg border-bolt-success-border"
-                          : "bg-bolt-danger-bg border-bolt-danger-border"
-                        }`}
+                          : "bg-amber-50 border-amber-200"
+                      }`}
                     >
                       <HugeiconsIcon
-                        icon={isHealthyMargin ? CheckmarkCircle02Icon : Alert02Icon}
+                        icon={isLoss ? Alert02Icon : isHealthyMargin ? CheckmarkCircle02Icon : Alert02Icon}
                         size={11}
-                        color={isHealthyMargin ? Colors.success.text : Colors.danger.text}
+                        color={isLoss ? Colors.danger.text : isHealthyMargin ? Colors.success.text : "#B45309"}
                       />
                       <Text
-                        className={`font-inter-semibold text-2xs ${isHealthyMargin ? "text-bolt-success-text" : "text-bolt-danger-text"
-                          }`}
+                        className={`font-inter-semibold text-2xs ${
+                          isLoss
+                            ? "text-bolt-danger-text"
+                            : isHealthyMargin
+                            ? "text-bolt-success-text"
+                            : "text-amber-700"
+                        }`}
                       >
-                        {isHealthyMargin ? "Profitable" : "Low Margin"} ({selectedStats.margin}%)
+                        {isLoss ? "Net Loss" : isHealthyMargin ? "Profitable" : "Low Margin"} ({selectedStats.margin}%)
                       </Text>
                     </View>
                   ) : (
@@ -188,10 +195,20 @@ export default function ReportScreen() {
 
                 {/* Hero Profit Number */}
                 <Text
-                  className={`font-poppins-bold text-3xl mb-1 ${hasSales ? "text-bolt-success-text" : "text-bolt-slate"
-                    }`}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                  className={`font-poppins-bold text-3xl mb-1 ${
+                    !hasSales
+                      ? "text-bolt-slate"
+                      : isLoss
+                      ? "text-bolt-danger-text"
+                      : isProfit
+                      ? "text-bolt-success-text"
+                      : "text-bolt-graphite"
+                  }`}
                 >
-                  {hasSales ? `+${fmtFull(selectedStats.profit)}` : `${currency}0`}
+                  {hasSales ? fmtSigned(selectedStats.profit) : `${currency}0`}
                 </Text>
 
                 <Text className="font-inter text-2xs text-bolt-slate mb-3">
@@ -200,14 +217,60 @@ export default function ReportScreen() {
 
                 {/* Plain English Translation of Margin */}
                 <View className="bg-bolt-surface p-2.5 rounded-xl mb-3.5 border border-bolt-divider flex-row items-center gap-2">
-                  <View className="w-6 h-6 rounded-full bg-bolt-light items-center justify-center shrink-0">
+                  <View
+                    className={`w-6 h-6 rounded-full items-center justify-center shrink-0 ${
+                      !hasSales
+                        ? "bg-bolt-light"
+                        : isLoss
+                        ? "bg-bolt-danger-bg"
+                        : "bg-bolt-light"
+                    }`}
+                  >
                     <HugeiconsIcon
-                      icon={hasSales ? TradeUpIcon : HelpCircleIcon}
+                      icon={!hasSales ? HelpCircleIcon : isLoss ? TradeDownIcon : TradeUpIcon}
                       size={13}
-                      color={hasSales ? Colors.primary : Colors.slate}
+                      color={
+                        !hasSales
+                          ? Colors.slate
+                          : isLoss
+                          ? Colors.danger.text
+                          : Colors.primary
+                      }
                     />
                   </View>
-                  {hasSales ? (
+                  {!hasSales ? (
+                    <Text className="font-inter text-xs text-bolt-slate flex-1 leading-4">
+                      No sales recorded for {timeframeLabel.toLowerCase()} yet.
+                    </Text>
+                  ) : isLoss ? (
+                    <Text className="font-inter text-xs text-bolt-graphite flex-1 leading-4">
+                      {Math.abs(profitPerThousand) >= 1 ? (
+                        <>
+                          For every <Text className="font-inter-bold">{currency}1,000</Text> sold, you lost{" "}
+                          <Text className="font-poppins-semibold text-bolt-danger-text">
+                            {currency}{Math.abs(profitPerThousand).toLocaleString("en-NG")}
+                          </Text>
+                          .
+                        </>
+                      ) : (
+                        <>
+                          You recorded a net loss of{" "}
+                          <Text className="font-poppins-semibold text-bolt-danger-text">
+                            {fmt(Math.abs(selectedStats.profit))}
+                          </Text>{" "}
+                          overall.
+                        </>
+                      )}
+                    </Text>
+                  ) : isBreakEven ? (
+                    <Text className="font-inter text-xs text-bolt-graphite flex-1 leading-4">
+                      For every <Text className="font-inter-bold">{currency}1,000</Text> sold, you broke even with{" "}
+                      <Text className="font-poppins-semibold text-bolt-slate">
+                        {currency}0
+                      </Text>{" "}
+                      net profit.
+                    </Text>
+                  ) : (
                     <Text className="font-inter text-xs text-bolt-graphite flex-1 leading-4">
                       For every <Text className="font-inter-bold">{currency}1,000</Text> sold, you pocketed{" "}
                       <Text className="font-poppins-semibold text-bolt-success-text">
@@ -215,36 +278,47 @@ export default function ReportScreen() {
                       </Text>{" "}
                       as pure profit.
                     </Text>
-                  ) : (
-                    <Text className="font-inter text-xs text-bolt-slate flex-1 leading-4">
-                      No sales recorded for {timeframeLabel.toLowerCase()} yet.
-                    </Text>
                   )}
                 </View>
 
                 {/* Sub-Stats Row with Hairline Dividers */}
-                <View className="border-t border-bolt-divider pt-3 flex-row items-center">
-                  <View className="flex-1">
-                    <Text className="text-bolt-slate text-2xs font-inter mb-0.5">Total Sales</Text>
-                    <Text className="text-bolt-graphite text-sm font-poppins-semibold">
+                <View className="border-t border-bolt-divider pt-3 flex-row items-center gap-1">
+                  <View className="flex-1 min-w-0">
+                    <Text numberOfLines={1} className="text-bolt-slate text-2xs font-inter mb-0.5">Total Sales</Text>
+                    <Text
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                      className="text-bolt-graphite text-sm font-poppins-semibold"
+                    >
                       {fmt(selectedStats.revenue)}
                     </Text>
                   </View>
 
                   <View className="w-px h-7 bg-bolt-divider" />
 
-                  <View className="flex-1 items-center">
-                    <Text className="text-bolt-slate text-2xs font-inter mb-0.5">Cost of Goods</Text>
-                    <Text className="text-bolt-slate text-sm font-poppins-semibold">
+                  <View className="flex-1 min-w-0 items-center">
+                    <Text numberOfLines={1} className="text-bolt-slate text-2xs font-inter mb-0.5">Cost of Goods</Text>
+                    <Text
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                      className="text-bolt-slate text-sm font-poppins-semibold"
+                    >
                       {fmt(selectedStats.cost)}
                     </Text>
                   </View>
 
                   <View className="w-px h-7 bg-bolt-divider" />
 
-                  <View className="flex-1 items-end">
-                    <Text className="text-bolt-slate text-2xs font-inter mb-0.5">Units Sold</Text>
-                    <Text className="font-poppins-semibold text-sm text-bolt-graphite">
+                  <View className="flex-1 min-w-0 items-end">
+                    <Text numberOfLines={1} className="text-bolt-slate text-2xs font-inter mb-0.5">Units Sold</Text>
+                    <Text
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                      className="font-poppins-semibold text-sm text-bolt-graphite"
+                    >
                       {selectedStats.units}
                     </Text>
                   </View>
@@ -270,28 +344,46 @@ export default function ReportScreen() {
               </View>
 
               {/* 3 Cash Flow Tiles */}
-              <View className="flex-row gap-2.5 mb-3">
-                <View className="flex-1 bg-bolt-surface p-2.5 rounded-xl border border-bolt-divider">
-                  <Text className="font-inter text-2xs text-bolt-slate mb-1">Money In</Text>
-                  <Text className="font-poppins-bold text-xs text-bolt-graphite">
+              <View className="flex-row gap-2 mb-3">
+                <View className="flex-1 min-w-0 bg-bolt-surface p-2.5 rounded-xl border border-bolt-divider">
+                  <Text numberOfLines={1} className="font-inter text-2xs text-bolt-slate mb-1">Money In</Text>
+                  <Text
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                    className="font-poppins-bold text-xs text-bolt-graphite"
+                  >
                     {fmt(selectedStats.revenue)}
                   </Text>
                 </View>
 
-                <View className="flex-1 bg-bolt-surface p-2.5 rounded-xl border border-bolt-divider">
-                  <Text className="font-inter text-2xs text-bolt-slate mb-1">Restock Spent</Text>
-                  <Text className="font-poppins-bold text-xs text-bolt-slate">
+                <View className="flex-1 min-w-0 bg-bolt-surface p-2.5 rounded-xl border border-bolt-divider">
+                  <Text numberOfLines={1} className="font-inter text-2xs text-bolt-slate mb-1">Restock Spent</Text>
+                  <Text
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                    className="font-poppins-bold text-xs text-bolt-slate"
+                  >
                     {fmt(selectedStats.restockSpend)}
                   </Text>
                 </View>
 
-                <View className="flex-1 bg-bolt-surface p-2.5 rounded-xl border border-bolt-divider">
-                  <Text className="font-inter text-2xs text-bolt-slate mb-1">Cash Left Over</Text>
+                <View className="flex-1 min-w-0 bg-bolt-surface p-2.5 rounded-xl border border-bolt-divider">
+                  <Text numberOfLines={1} className="font-inter text-2xs text-bolt-slate mb-1">Cash Left Over</Text>
                   <Text
-                    className={`font-poppins-bold text-xs ${netCashFlow > 0 ? "text-bolt-success-text" : "text-bolt-slate"
-                      }`}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                    className={`font-poppins-bold text-xs ${
+                      netCashFlow > 0
+                        ? "text-bolt-success-text"
+                        : netCashFlow < 0
+                        ? "text-bolt-danger-text"
+                        : "text-bolt-slate"
+                    }`}
                   >
-                    {fmt(Math.max(0, netCashFlow))}
+                    {netCashFlow < 0 ? fmtSigned(netCashFlow) : fmt(netCashFlow)}
                   </Text>
                 </View>
               </View>
@@ -300,23 +392,31 @@ export default function ReportScreen() {
               <View className="h-2.5 bg-bolt-divider rounded-full flex-row overflow-hidden">
                 <View
                   style={{
-                    width: `${hasSales ? costPct : 0}%`,
-                    backgroundColor: Colors.disabled,
+                    width: `${hasSales ? (isLoss ? 100 : costPct) : 0}%`,
+                    backgroundColor: isLoss ? Colors.danger.bg : Colors.disabled,
                   }}
                 />
-                <View
-                  style={{
-                    width: `${hasSales ? profitPct : 0}%`,
-                    backgroundColor: Colors.mint,
-                  }}
-                />
+                {!isLoss && (
+                  <View
+                    style={{
+                      width: `${hasSales ? profitPct : 0}%`,
+                      backgroundColor: Colors.mint,
+                    }}
+                  />
+                )}
               </View>
               <View className="flex-row justify-between items-center mt-1.5 px-0.5">
                 <Text className="font-inter text-2xs text-bolt-slate">
-                  Cost of Goods: {hasSales ? `${costPct}%` : "—"}
+                  Cost of Goods: {hasSales ? `${isLoss ? ">100" : costPct}%` : "—"}
                 </Text>
-                <Text className="font-inter text-2xs text-bolt-success-text">
-                  Clean Profit: {hasSales ? `${profitPct}%` : "—"}
+                <Text
+                  className={`font-inter text-2xs ${
+                    isLoss ? "text-bolt-danger-text" : "text-bolt-success-text"
+                  }`}
+                >
+                  {isLoss
+                    ? `Net Loss: ${Math.abs(profitPct)}%`
+                    : `Clean Profit: ${hasSales ? `${profitPct}%` : "—"}`}
                 </Text>
               </View>
             </View>
@@ -392,8 +492,16 @@ export default function ReportScreen() {
 
                       {/* Profit Brought In */}
                       <View className="items-end justify-center">
-                        <Text className="font-poppins-bold text-sm text-bolt-success-text">
-                          +{fmt(p.totalProfit)}
+                        <Text
+                          className={`font-poppins-bold text-sm ${
+                            p.totalProfit > 0
+                              ? "text-bolt-success-text"
+                              : p.totalProfit < 0
+                              ? "text-bolt-danger-text"
+                              : "text-bolt-slate"
+                          }`}
+                        >
+                          {fmtSigned(p.totalProfit)}
                         </Text>
                         <Text className="font-inter text-2xs text-bolt-slate mt-0.5">
                           Sales: {fmt(p.totalRevenue)}

@@ -61,6 +61,7 @@ export function useSignUpScreen() {
     showPassword,
     togglePassword,
     loading: loading || isGoogleLoading,
+    isGoogleLoading: Boolean(isGoogleLoading),
     focusedField,
     setFocusedField,
     isChecked,

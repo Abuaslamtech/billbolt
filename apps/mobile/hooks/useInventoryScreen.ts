@@ -11,7 +11,7 @@ export const PAGE_SIZE = 15;
 export type StockStatusFilter = "ALL" | "LOW_STOCK" | "OUT_OF_STOCK";
 
 export function useInventoryScreen() {
-  const { products, refresh } = useAppDataStore();
+  const { products, refresh, isLoading, isInitialized } = useAppDataStore();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -115,6 +115,7 @@ export function useInventoryScreen() {
     outOfStockCount,
     refreshing,
     handleRefresh,
+    isInitialLoading: !isInitialized || (isLoading && products.length === 0),
     fmt: formatCurrency,
     // Modals & Navigation
     isAddModalVisible,

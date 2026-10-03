@@ -21,14 +21,18 @@ export function useSaleSuccess() {
     resetSale();
   }, [resetSale]);
 
-  // Hardware Back Button Intercept: physical back returns Home
+  // Hardware Back Button Intercept: dismiss modal if open, otherwise return Home
   useEffect(() => {
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (showReceiptDetail) {
+        setShowReceiptDetail(false);
+        return true;
+      }
       handleDone();
       return true;
     });
     return () => subscription.remove();
-  }, [handleDone]);
+  }, [showReceiptDetail, handleDone]);
 
   // Guard: if no completed receipt exists on mount, redirect to main
   useEffect(() => {
@@ -40,10 +44,7 @@ export function useSaleSuccess() {
   const items = completedReceipt?.items;
   const totalUnits = useMemo(() => {
     if (!items) return 0;
-    return items.reduce(
-      (sum, item) => sum + item.quantity,
-      0
-    );
+    return items.reduce((sum, item) => sum + (item.quantity || 0), 0);
   }, [items]);
 
   const formattedDateTime = useMemo(() => {

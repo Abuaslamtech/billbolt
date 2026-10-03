@@ -70,9 +70,8 @@ export default function useAuth() {
       setToken(authRes.accessToken);
       setUser(authRes.user as any);
 
-      // Clean & initialize fresh app data for the newly registered account
+      // Clean in-memory app data for the newly registered account
       useAppDataStore.getState().reset();
-      await useAppDataStore.getState().init();
 
       Toast.show({
         type: "success",
@@ -120,18 +119,29 @@ export default function useAuth() {
       setToken(authRes.accessToken);
       setUser(authRes.user as any);
 
-      // 4. Reset & initialize fresh app data for the signed-in account
-      useAppDataStore.getState().reset();
-      await useAppDataStore.getState().init();
+      // 4. Branch routing based on business setup status
+      if (authRes.needsBusinessSetup || !authRes.user?.business) {
+        useAppDataStore.getState().reset();
+        Toast.show({
+          type: "info",
+          text1: "Welcome to Billbolt",
+          text2: "Let's set up your shop.",
+          position: "top",
+        });
+        router.replace("/(auth)/SetupShopWizard");
+      } else {
+        useAppDataStore.getState().reset();
+        await useAppDataStore.getState().init();
 
-      Toast.show({
-        type: "success",
-        text1: "Sign In Successful",
-        text2: "Welcome back to BillBolt!",
-        position: "top",
-      });
+        Toast.show({
+          type: "success",
+          text1: "Sign In Successful",
+          text2: "Welcome back to BillBolt!",
+          position: "top",
+        });
 
-      router.replace("/(main)");
+        router.replace("/(main)");
+      }
     } catch (error: any) {
       console.error("Sign in error:", error);
 

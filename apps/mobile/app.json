@@ -6,18 +6,23 @@
     "icon": "./assets/images/icon.png",
     "scheme": "billbolt",
     "slug": "billbolt",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.billbolt.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Billbolt needs camera access to scan product barcodes and QR labels.",
+        "NSFaceIDUsageDescription": "Billbolt uses Face ID to securely unlock your store register.",
+        "UIRequiresFullScreen": true
+      },
       "entitlements": {
         "aps-environment": "production"
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#0052CC"
       },
       "package": "com.billbolt.app",
       "googleServicesFile": "./google-services.json",
@@ -37,9 +42,21 @@
       "expo-web-browser",
       "@react-native-google-signin/google-signin",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Billbolt needs camera access to scan product barcodes and QR labels."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Billbolt uses Face ID to securely unlock your store register."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
-          "image": "./assets/images/billbolt.png",
+          "image": "./assets/images/splash.png",
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
@@ -47,7 +64,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "The app accesses your photos to let you share them with your friends."
+          "photosPermission": "Billbolt needs access to your photos to upload store logos and product images."
         }
       ],
       "expo-image",

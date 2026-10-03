@@ -8,18 +8,15 @@ import {
   FlatList,
   Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
-import Add01Icon from '@hugeicons/core-free-icons/Add01Icon';
-import MinusSignIcon from '@hugeicons/core-free-icons/MinusSignIcon';
-import Delete02Icon from '@hugeicons/core-free-icons/Delete02Icon';
 import Search01Icon from '@hugeicons/core-free-icons/Search01Icon';
 import ShoppingCart01Icon from '@hugeicons/core-free-icons/ShoppingCart01Icon';
 import ArrowRight02Icon from '@hugeicons/core-free-icons/ArrowRight02Icon';
 import Package01Icon from '@hugeicons/core-free-icons/Package01Icon';
 import QrCode01Icon from '@hugeicons/core-free-icons/QrCode01Icon';
-import Edit02Icon from '@hugeicons/core-free-icons/Edit02Icon';
 import * as Haptics from "expo-haptics";
 import BackButton from "@/components/Elements/BackButton";
 import ConfirmDialog from "@/components/Elements/ConfirmDialog";
@@ -32,9 +29,10 @@ import { useSaleCatalog } from "@/hooks/useSaleCatalog";
 import { ProductWithStock } from "@/types/models";
 import { Shadows } from "@/lib/styles";
 
-
+import FrequentlySoldStrip from "@/components/Elements/FrequentlySoldStrip";
 
 export default function SaleCatalogScreen() {
+  const insets = useSafeAreaInsets();
   const {
     cart,
     searchQuery,
@@ -43,6 +41,7 @@ export default function SaleCatalogScreen() {
     setSelectedCategory,
     categories,
     filteredProducts,
+    frequentProducts,
     totalItemsCount,
     cartSubtotal,
     isScannerOpen,
@@ -51,6 +50,8 @@ export default function SaleCatalogScreen() {
     setIsDiscardDialogOpen,
     quantityPickerTarget,
     setQuantityPickerTarget,
+    restockPromptProduct,
+    setRestockPromptProduct,
     addToCart,
     updateQty,
     setDirectQty,
@@ -93,7 +94,9 @@ export default function SaleCatalogScreen() {
                 Record a Sale
               </Text>
               <Text className="font-inter text-2xs text-bolt-slate mt-0.5">
-                {totalItemsCount > 0 ? `${totalItemsCount} item(s) selected` : "Select products"}
+                {totalItemsCount > 0
+                  ? `${totalItemsCount} ${totalItemsCount === 1 ? "item" : "items"} selected`
+                  : "Select products"}
               </Text>
             </View>
           </View>
@@ -140,6 +143,16 @@ export default function SaleCatalogScreen() {
             ) : null}
           </View>
         </View>
+
+        {/* Frequently Sold 1-Click Quick Sale Strip */}
+        {!searchQuery && selectedCategory === "All" && (
+          <View className="px-4">
+            <FrequentlySoldStrip
+              products={frequentProducts}
+              onSelectProduct={handleAddToCart}
+            />
+          </View>
+        )}
 
         {/* Category Filter Chips */}
         {categories.length > 1 && (
@@ -220,28 +233,36 @@ export default function SaleCatalogScreen() {
         {/* ── Sticky Bottom Cart Bar ───────────────────────────────────────── */}
         {cart.length > 0 && (
           <View
-            className="px-5 py-3.5 bg-bolt-card border-t border-bolt-divider shadow-lg flex-row justify-between items-center"
-            style={Shadows.header}
+            className="px-5 pt-3.5 bg-bolt-card border-t border-bolt-divider shadow-lg flex-row justify-between items-center gap-3"
+            style={[Shadows.header, { paddingBottom: Math.max(insets.bottom, 14) }]}
           >
-            <View>
+            <View className="flex-1 min-w-0 pr-2">
               <View className="flex-row items-center gap-1.5">
                 <HugeiconsIcon icon={ShoppingCart01Icon} size={14} color={Colors.primary} />
-                <Text className="font-inter-medium text-xs text-bolt-slate">
+                <Text numberOfLines={1} className="font-inter-medium text-xs text-bolt-slate">
                   {totalItemsCount} {totalItemsCount === 1 ? "item" : "items"} in cart
                 </Text>
               </View>
-              <Text className="font-poppins-bold text-xl text-bolt-graphite">
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+                className="font-poppins-bold text-xl text-bolt-graphite"
+              >
                 {formatCurrency(cartSubtotal)}
               </Text>
             </View>
 
             <TouchableOpacity
               onPress={handleReviewSale}
-              className="bg-bolt-blue px-5 py-3.5 rounded-2xl flex-row items-center gap-2 shadow-sm active:bg-bolt-primary-dark"
+              className="bg-bolt-blue px-5 py-3.5 rounded-2xl flex-row items-center gap-2 shadow-sm active:bg-bolt-primary-dark shrink-0"
               accessibilityRole="button"
               accessibilityLabel="Review sale and proceed to checkout"
             >
-              <Text className="font-poppins-semibold text-bolt-card text-xs">
+              <Text
+                numberOfLines={1}
+                className="font-poppins-semibold text-bolt-card text-sm"
+              >
                 Review Sale
               </Text>
               <HugeiconsIcon icon={ArrowRight02Icon} size={15} color={Colors.card} />
@@ -282,6 +303,20 @@ export default function SaleCatalogScreen() {
         visible={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
         onProductScanned={handleProductScanned}
+      />
+
+      {/* Out of Stock Restock Prompt Dialog */}
+      <ConfirmDialog
+        visible={!!restockPromptProduct}
+        title="Out of Stock"
+        message={`${restockPromptProduct?.name || "Product"} has 0 units in your inventory. Would you like to restock it now?`}
+        confirmText="Restock Item Now"
+        cancelText="Cancel"
+        onConfirm={() => {
+          setRestockPromptProduct(null);
+          router.push("/restock");
+        }}
+        onCancel={() => setRestockPromptProduct(null)}
       />
     </SafeAreaView>
   );

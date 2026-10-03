@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="none"/>
+  <g id="billbolt-symbol">
+    <circle cx="256" cy="256" r="210" fill="#0052CC"/>
+    <circle cx="256" cy="256" r="124" fill="#FFFFFF"/>
+    <path d="M306 86 L184 256 L246 256 L199 426 L333 238 L269 238 Z" fill="#F7B500"/>
+  </g>
+</svg>

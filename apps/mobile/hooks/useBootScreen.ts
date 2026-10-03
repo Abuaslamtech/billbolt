@@ -83,13 +83,7 @@ export function useBootScreen() {
   };
 
   const handleUsePassword = async () => {
-    await Promise.allSettled([
-      clearAuthStorage(),
-      clearOfflineCache(),
-      clearSyncQueue(),
-    ]);
-    useAppDataStore.getState().reset();
-    useSyncStore.getState().setPendingCount(0);
+    await clearAuthStorage();
     useAuthStore.getState().clearAuth();
     setIsLocked(false);
     router.replace("/(auth)");

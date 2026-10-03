@@ -4,22 +4,21 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import Search01Icon from '@hugeicons/core-free-icons/Search01Icon';
 import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
 import Invoice02Icon from '@hugeicons/core-free-icons/Invoice02Icon';
-import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
 import ArrowDown01Icon from '@hugeicons/core-free-icons/ArrowDown01Icon';
 import * as Haptics from "expo-haptics";
 import { useAppDataStore } from "@/store/AppDataStore";
 import { Receipt } from "@/types/models";
 import ReceiptDetailModal from "@/components/Receipts/ReceiptDetailModal";
 import ReceiptRow from "@/components/ReceiptRow";
+import { ReceiptRowSkeleton } from "@/components/Elements/Skeleton";
 import { formatReceiptNo } from "@/services/storage/cycleUtils";
 import { Colors } from "@/lib/colors";
-import { formatCurrency as fmt } from "@/lib/formatters";
 import { Shadows } from "@/lib/styles";
 
 const PAGE_SIZE = 15;
 
 export default function ReceiptHistory() {
-  const { receipts, refresh } = useAppDataStore();
+  const { receipts, refresh, isLoading, isInitialized } = useAppDataStore();
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<"ALL" | "Cash" | "Transfer" | "Card">("ALL");
@@ -140,7 +139,16 @@ export default function ReceiptHistory() {
       </View>
 
       {/* ── Receipts List ─────────────────────────────────────────── */}
-      {receipts.length === 0 ? (
+      {!isInitialized || (isLoading && receipts.length === 0) ? (
+        <View
+          className="bg-bolt-card rounded-2xl border border-bolt-border overflow-hidden"
+          style={Shadows.card}
+        >
+          <ReceiptRowSkeleton />
+          <ReceiptRowSkeleton />
+          <ReceiptRowSkeleton isLast />
+        </View>
+      ) : receipts.length === 0 ? (
         <View
           className="bg-bolt-card rounded-2xl p-8 items-center justify-center border border-bolt-border"
           style={Shadows.card}
@@ -152,13 +160,13 @@ export default function ReceiptHistory() {
             No sales yet
           </Text>
           <Text className="font-inter text-xs text-bolt-slate text-center mt-1">
-            Tap "Record a Sale" above to log your first sale.
+            Tap &quot;Record a Sale&quot; above to log your first sale.
           </Text>
         </View>
       ) : filteredReceipts.length === 0 ? (
         <View className="bg-bolt-card rounded-2xl p-6 items-center justify-center border border-bolt-border">
           <Text className="font-inter-medium text-xs text-bolt-slate text-center">
-            No sales match "{searchQuery}"
+            No sales match &quot;{searchQuery}&quot;
           </Text>
           <TouchableOpacity
             onPress={() => {

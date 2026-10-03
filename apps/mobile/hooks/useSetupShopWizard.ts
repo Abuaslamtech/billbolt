@@ -62,7 +62,7 @@ export function useSetupShopWizard() {
   // Step 3: Phone & Currency
   const deviceLocale = getDeviceLocale();
   const [phone, setPhone] = useState(user?.phone || "");
-  const [currency, setCurrency] = useState(deviceLocale.currencyCode || "USD");
+  const [currency, setCurrency] = useState(deviceLocale.currencyCode || "NGN");
   const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -71,6 +71,17 @@ export function useSetupShopWizard() {
   const isStep2Valid =
     selectedArchetype !== null &&
     (selectedArchetype.value !== "custom" || customCategory.trim().length >= 2);
+
+  const cleanDigits = phone.replace(/\D/g, "");
+  const isPhoneEmpty = phone.trim().length === 0;
+  const isStep3Valid = isPhoneEmpty || (cleanDigits.length >= 10 && cleanDigits.length <= 15);
+
+  const phoneError =
+    !isPhoneEmpty && cleanDigits.length < 10
+      ? "Phone number must be at least 10 digits"
+      : !isPhoneEmpty && cleanDigits.length > 15
+      ? "Phone number cannot exceed 15 digits"
+      : undefined;
 
   const handleNextStep = () => {
     if (currentStep === 1 && !isStep1Valid) return;
@@ -92,7 +103,8 @@ export function useSetupShopWizard() {
     setSelectedArchetype(archetype);
   };
 
-  const handleSubmit = async (skipPhone = false) => {
+  const handleSubmit = async () => {
+    if (submitting || !isStep3Valid) return;
     if (!shopName.trim()) {
       setCurrentStep(1);
       return;
@@ -106,7 +118,7 @@ export function useSetupShopWizard() {
         ? customCategory.trim() || "Retail"
         : selectedArchetype?.value || "Retail";
 
-    const formattedPhone = !skipPhone && phone.trim() ? phone.trim() : undefined;
+    const formattedPhone = phone.trim() ? phone.trim() : undefined;
 
     try {
       const res = await apiClient.post("/business", {
@@ -179,6 +191,8 @@ export function useSetupShopWizard() {
     submitting,
     isStep1Valid,
     isStep2Valid,
+    isStep3Valid,
+    phoneError,
     handleNextStep,
     handlePrevStep,
     handleSelectArchetype,

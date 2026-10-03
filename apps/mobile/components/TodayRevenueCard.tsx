@@ -8,12 +8,18 @@ import { Colors } from "@/lib/colors";
 import { formatCurrency as fmt } from "@/lib/formatters";
 import { Shadows } from "@/lib/styles";
 
+import { TodayRevenueCardSkeleton } from "@/components/Elements/Skeleton";
+
 export interface TodayRevenueCardProps {
   todaySales: number;
   receiptsToday: number;
   yesterdaySales?: number;
   monthRevenue?: number;
   growth?: number;
+  loading?: boolean;
+  todayCash?: number;
+  todayTransfer?: number;
+  todayCard?: number;
 }
 
 /**
@@ -26,7 +32,15 @@ export default function TodayRevenueCard({
   yesterdaySales,
   monthRevenue,
   growth = 0,
+  loading = false,
+  todayCash = 0,
+  todayTransfer = 0,
+  todayCard = 0,
 }: TodayRevenueCardProps) {
+  if (loading) {
+    return <TodayRevenueCardSkeleton />;
+  }
+
   const growthUp = growth >= 0;
   const yesterdayAmount = yesterdaySales ?? monthRevenue ?? 0;
 
@@ -47,7 +61,7 @@ export default function TodayRevenueCard({
         {/* Label row + growth badge */}
         <View className="flex-row items-center justify-between mb-1">
           <Text className="text-bolt-slate text-xs font-inter-semibold">
-            Today's Revenue
+            Today&apos;s Revenue
           </Text>
 
           <View
@@ -69,18 +83,51 @@ export default function TodayRevenueCard({
           </View>
         </View>
 
-        {/* Hero amount */}
-        <Text className="text-bolt-graphite font-poppins-bold text-hero mb-3">
+        {/* Hero amount — dynamically scaled to prevent 2-line wraps */}
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
+          className="text-bolt-graphite font-poppins-bold text-hero mb-2"
+        >
           {fmt(todaySales)}
         </Text>
+
+        {/* Payment Method Split Badges */}
+        {todaySales > 0 && (
+          <View className="flex-row items-center gap-1.5 mb-3 flex-wrap">
+            <View className="bg-bolt-surface px-2.5 py-1 rounded-lg border border-bolt-border">
+              <Text className="font-inter-semibold text-2xs text-bolt-graphite">
+                Cash: {fmt(todayCash)}
+              </Text>
+            </View>
+            <View className="bg-bolt-surface px-2.5 py-1 rounded-lg border border-bolt-border">
+              <Text className="font-inter-semibold text-2xs text-bolt-graphite">
+                Transfer: {fmt(todayTransfer)}
+              </Text>
+            </View>
+            {todayCard > 0 ? (
+              <View className="bg-bolt-surface px-2.5 py-1 rounded-lg border border-bolt-border">
+                <Text className="font-inter-semibold text-2xs text-bolt-graphite">
+                  Card: {fmt(todayCard)}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        )}
 
         {/* Sub-stats row — clean 2-metric layout */}
         <View className="border-t border-bolt-divider pt-3 flex-row items-center gap-4">
           <View className="flex-1">
-            <Text className="text-bolt-slate text-xs font-inter mb-0.5">
+            <Text numberOfLines={1} className="text-bolt-slate text-xs font-inter mb-0.5">
               Receipts Today
             </Text>
-            <Text className="text-bolt-graphite text-base font-poppins-semibold">
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              className="text-bolt-graphite text-base font-poppins-semibold"
+            >
               {receiptsToday}
             </Text>
           </View>
@@ -88,10 +135,15 @@ export default function TodayRevenueCard({
           <View className="w-px h-8 bg-bolt-divider" />
 
           <View className="flex-1">
-            <Text className="text-bolt-slate text-xs font-inter mb-0.5">
-              Yesterday's Revenue
+            <Text numberOfLines={1} className="text-bolt-slate text-xs font-inter mb-0.5">
+              Yesterday&apos;s Revenue
             </Text>
-            <Text className="text-bolt-graphite text-base font-poppins-semibold">
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              className="text-bolt-graphite text-base font-poppins-semibold"
+            >
               {fmt(yesterdayAmount)}
             </Text>
           </View>

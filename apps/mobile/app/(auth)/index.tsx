@@ -17,6 +17,7 @@ import AuthHeader from "@/components/Auth/AuthHeader";
 import LinkModal from "@/components/Auth/LinkModal";
 import { Button } from "@/components/Elements/Buton";
 import { InputField } from "@/components/Elements/InputField";
+import LoadingOverlay from "@/components/Elements/LoadingOverlay";
 import { Colors } from "@/lib/colors";
 import { useLoginScreen } from "@/hooks/useLoginScreen";
 
@@ -94,7 +95,8 @@ export default function Index() {
               label={isLoading ? "Signing In..." : "Sign In"}
               onPress={handleSignIn}
               iconName={isLoading ? "hourglass-empty" : "login"}
-              disabled={false}
+              disabled={isLoading || isGoogleLoading}
+              loading={isLoading}
               isChecked={true}
             />
 
@@ -102,7 +104,10 @@ export default function Index() {
             {hasBiometric && (
               <TouchableOpacity
                 onPress={handleBiometricSignIn}
-                className="w-full h-14 bg-bolt-light border border-bolt-blue/20 rounded-2xl flex-row items-center justify-center gap-2 mt-1"
+                disabled={isLoading || isGoogleLoading}
+                className={`w-full h-14 bg-bolt-light border border-bolt-blue/20 rounded-2xl flex-row items-center justify-center gap-2 mt-1 ${
+                  isLoading || isGoogleLoading ? "opacity-50" : "active:opacity-80"
+                }`}
                 activeOpacity={0.8}
               >
                 <HugeiconsIcon icon={FingerPrintIcon} size={20} color={Colors.primary} />
@@ -119,7 +124,7 @@ export default function Index() {
               action="Sign Up"
               onPress={handleGoogleSignIn}
               handleRoute={() => router.push("/(auth)/SignUpScreen")}
-              disabled={isGoogleLoading}
+              disabled={isGoogleLoading || isLoading}
             />
           </View>
         </View>
@@ -133,6 +138,19 @@ export default function Index() {
           visible={isModalVisible}
         />
       </KeyboardAwareScrollView>
+
+      {/* Screen-locking loader during authentication */}
+      <LoadingOverlay
+        visible={isLoading || isGoogleLoading || isLinking}
+        message={
+          isLinking
+            ? "Linking Account..."
+            : isGoogleLoading
+            ? "Signing in with Google..."
+            : "Signing In..."
+        }
+        submessage="Verifying your credentials"
+      />
     </SafeAreaView>
   );
 }

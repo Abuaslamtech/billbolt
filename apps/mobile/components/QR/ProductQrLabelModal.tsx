@@ -4,6 +4,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
@@ -88,6 +89,9 @@ export default function ProductQrLabelModal({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <View className="flex-1 justify-end bg-black/60">
+        <TouchableWithoutFeedback onPress={handleClose} accessibilityRole="button" accessibilityLabel="Dismiss modal">
+          <View className="flex-1 w-full" />
+        </TouchableWithoutFeedback>
         <View className="bg-bolt-card rounded-t-3xl p-6 max-h-[90%] border-t border-bolt-light">
           {/* Header */}
           <View className="flex-row justify-between items-center pb-3 border-b border-bolt-divider">

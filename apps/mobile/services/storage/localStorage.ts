@@ -15,6 +15,8 @@ import {
   Receipt,
   Restock,
   Sale,
+  DebtRepayment,
+  DebtorCustomerSummary,
 } from '@/types/models';
 import {
   BusinessInfo,
@@ -24,6 +26,7 @@ import {
   getCachedReceipts,
   getCachedRestocks,
   getCachedSales,
+  getCachedRepayments,
   setCachedBusinessInfo,
   setCachedProducts,
   setCachedReceipts,
@@ -32,12 +35,25 @@ import {
   createOfflineProduct,
   createOfflineReceipt,
   createOfflineRestock,
+  recordOfflineDebtRepayment,
   updateOfflineBusinessInfo,
+  applyRestockToCachedProducts,
+  applySaleDeductionToCachedProducts,
+  recordSalesFromReceipt,
   clearOfflineCache,
 } from './offlineCache';
+import { formatYMD } from './cycleUtils';
 import { enqueueSyncAction } from '@/services/sync/syncEngine';
 
-export { BusinessInfo, DEFAULT_BUSINESS_INFO, clearOfflineCache };
+import { generateProductSku } from '@/lib/qr/qrGenerator';
+
+export {
+  BusinessInfo,
+  DEFAULT_BUSINESS_INFO,
+  clearOfflineCache,
+  getCachedRepayments,
+};
+
 
 export async function getBusinessInfo(): Promise<BusinessInfo> {
   const isOnline = useSyncStore.getState().isOnline;
@@ -130,8 +146,6 @@ export async function getProductsWithStock(): Promise<ProductWithStock[]> {
   }
 }
 
-import { generateProductSku } from '@/lib/qr/qrGenerator';
-
 export async function addProduct(
   input: Omit<Product, 'id' | 'createdAt'>,
 ): Promise<ProductWithStock> {
@@ -187,19 +201,25 @@ export async function addRestock(input: {
 }): Promise<Restock> {
   const isOnline = useSyncStore.getState().isOnline;
 
+  const restockPayload = {
+    ...input,
+    date: input.date ? formatYMD(input.date) : formatYMD(),
+  };
+
   if (isOnline) {
     try {
-      const { data } = await apiClient.post('/inventory/restocks', input);
+      const { data } = await apiClient.post('/inventory/restocks', restockPayload);
       const cached = await getCachedRestocks();
       await setCachedRestocks([data, ...cached.filter((r) => r.id !== data.id)]);
+      await applyRestockToCachedProducts(input.productId, input.qty, input.costPerUnit);
       return data;
     } catch (err) {
       // Fallback to offline on error
     }
   }
 
-  const localRestock = await createOfflineRestock(input);
-  await enqueueSyncAction('LOG_RESTOCK', input, localRestock.id);
+  const localRestock = await createOfflineRestock(restockPayload);
+  await enqueueSyncAction('LOG_RESTOCK', restockPayload, localRestock.id);
   Toast.show({
     type: 'info',
     text1: 'Restock Saved Offline',
@@ -250,6 +270,8 @@ export async function createReceipt(input: {
   customerPhone?: string;
   items: { productId: string; qty: number }[];
   paymentMethod?: Receipt['paymentMethod'];
+  depositAmount?: number;
+  dueDate?: string;
   soldBy?: string;
   notes?: string;
   date?: string;
@@ -257,11 +279,24 @@ export async function createReceipt(input: {
 }): Promise<Receipt> {
   const isOnline = useSyncStore.getState().isOnline;
 
+  const payload = {
+    ...input,
+    date: input.date ? formatYMD(input.date) : formatYMD(),
+    items: input.items.map((i) => ({
+      productId: i.productId,
+      qty: i.qty,
+    })),
+  };
+
   if (isOnline) {
     try {
-      const { data } = await apiClient.post<Receipt>('/receipts', input);
+      const { data } = await apiClient.post<Receipt>('/receipts', payload);
       const cached = await getCachedReceipts();
       await setCachedReceipts([data, ...cached.filter((r) => r.id !== data.id)]);
+      await Promise.all([
+        applySaleDeductionToCachedProducts(input.items),
+        recordSalesFromReceipt(data),
+      ]);
       return data;
     } catch (err: any) {
       // Only fall back to offline if it was a genuine network error (no response).
@@ -281,14 +316,117 @@ export async function createReceipt(input: {
   }
 
   // Network unreachable -> generate instant local receipt and queue sync
-  const localReceipt = await createOfflineReceipt(input);
-  await enqueueSyncAction('CREATE_RECEIPT', input, localReceipt.id);
+  const localReceipt = await createOfflineReceipt(payload);
+  await enqueueSyncAction(
+    'CREATE_RECEIPT',
+    {
+      ...payload,
+      receiptNumber: localReceipt.receiptNumber,
+      soldBy: localReceipt.soldBy,
+    },
+    localReceipt.id,
+  );
   Toast.show({
     type: 'info',
     text1: 'Recorded Offline',
     text2: 'Receipt created. Will sync to cloud automatically.',
   });
   return localReceipt;
+}
+
+export async function recordDebtRepayment(input: {
+  receiptId?: string;
+  customerPhone: string;
+  customerName: string;
+  amount: number;
+  paymentMethod?: 'Cash' | 'Transfer' | 'Card';
+  date?: string;
+  note?: string;
+}): Promise<DebtRepayment> {
+  const isOnline = useSyncStore.getState().isOnline;
+  const payload = {
+    ...input,
+    date: input.date ? formatYMD(input.date) : formatYMD(),
+  };
+
+  if (isOnline) {
+    try {
+      const { data } = await apiClient.post<DebtRepayment>('/receipts/repay', payload);
+      // Sync local cache
+      const localRep = await recordOfflineDebtRepayment(payload);
+      return data || localRep;
+    } catch (err: any) {
+      const isNetworkError =
+        !err?.response ||
+        err?.code === 'ECONNABORTED' ||
+        err?.message?.includes('Network Error');
+
+      if (!isNetworkError) {
+        throw err;
+      }
+    }
+  }
+
+  const localRep = await recordOfflineDebtRepayment(payload);
+  await enqueueSyncAction(
+    'RECORD_DEBT_REPAYMENT',
+    payload,
+    localRep.id,
+  );
+  Toast.show({
+    type: 'info',
+    text1: 'Repayment Saved Locally',
+    text2: 'Customer balance updated. Will sync when online.',
+  });
+  return localRep;
+}
+
+export function computeDebtorsSummary(receipts: Receipt[]): DebtorCustomerSummary[] {
+  const unpaid = receipts.filter((r) => (r.balanceOwed || 0) > 0);
+  const map = new Map<string, DebtorCustomerSummary>();
+  const todayStr = formatYMD();
+
+  for (const r of unpaid) {
+    const key = (r.customerPhone || r.customerName || 'customer').trim().toLowerCase();
+    const isOverdue = Boolean(r.dueDate && r.dueDate < todayStr);
+    const existing = map.get(key);
+
+    if (!existing) {
+      map.set(key, {
+        customerName: r.customerName || 'Customer',
+        customerPhone: r.customerPhone || '',
+        totalOwed: r.total,
+        totalPaid: r.amountPaid || 0,
+        remainingBalance: r.balanceOwed || 0,
+        receiptCount: 1,
+        latestReceiptDate: r.date,
+        earliestDueDate: r.dueDate,
+        isOverdue,
+        receipts: [r],
+      });
+    } else {
+      existing.totalOwed += r.total;
+      existing.totalPaid += (r.amountPaid || 0);
+      existing.remainingBalance += (r.balanceOwed || 0);
+      existing.receiptCount += 1;
+      existing.receipts.push(r);
+      if (isOverdue) existing.isOverdue = true;
+      if (r.dueDate && (!existing.earliestDueDate || r.dueDate < existing.earliestDueDate)) {
+        existing.earliestDueDate = r.dueDate;
+      }
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => {
+    if (a.isOverdue && !b.isOverdue) return -1;
+    if (!a.isOverdue && b.isOverdue) return 1;
+    return b.remainingBalance - a.remainingBalance;
+  });
+}
+
+
+export async function getDebtRepayments(): Promise<DebtRepayment[]> {
+  return getCachedRepayments();
 }
 
 // ─── Initialize Storage ───────────────────────────────────────────────────────
@@ -301,5 +439,6 @@ export async function initializeStorage(): Promise<void> {
     getCachedSales(),
     getCachedReceipts(),
     getCachedRestocks(),
+    getCachedRepayments(),
   ]);
 }

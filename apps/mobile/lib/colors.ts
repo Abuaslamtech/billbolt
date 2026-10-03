@@ -25,7 +25,7 @@ export const Colors = {
   warning: { text: "#D97706", bg: "#FFFBEB", border: "#FDE68A" },
 
   // ── Accent ─────────────────────────────────────────────────────────
-  yellow: "#FFD700",
+  yellow: "#F7B500",
   mint:   "#22C55E",
   purple: "#8B5CF6",
 } as const;

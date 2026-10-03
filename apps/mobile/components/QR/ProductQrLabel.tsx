@@ -38,6 +38,7 @@ const ProductQrLabel = forwardRef<View, ProductQrLabelProps>(
         {/* Store Header Banner */}
         <Text
           numberOfLines={1}
+          allowFontScaling={false}
           className="font-inter-bold text-[9px] text-bolt-slate uppercase tracking-[0.2em] text-center mb-3"
         >
           {storeName}
@@ -48,6 +49,7 @@ const ProductQrLabel = forwardRef<View, ProductQrLabelProps>(
         {/* Product Name */}
         <Text
           numberOfLines={2}
+          allowFontScaling={false}
           className="font-poppins-bold text-[15px] text-bolt-graphite text-center leading-tight mb-5 px-2"
         >
           {product.name}
@@ -60,13 +62,19 @@ const ProductQrLabel = forwardRef<View, ProductQrLabelProps>(
 
         {/* Human-Readable SKU / Identifier */}
         <View className="bg-bolt-surface px-4 py-1.5 rounded-full mb-3">
-          <Text className="font-poppins-semibold text-[11px] text-bolt-graphite tracking-widest uppercase">
+          <Text
+            allowFontScaling={false}
+            className="font-poppins-semibold text-[11px] text-bolt-graphite tracking-widest uppercase"
+          >
             {qrString}
           </Text>
         </View>
 
         {/* Subtle Brand Watermark */}
-        <Text className="font-inter text-[8px] text-bolt-disabled uppercase tracking-wider">
+        <Text
+          allowFontScaling={false}
+          className="font-inter text-[8px] text-bolt-disabled uppercase tracking-wider"
+        >
           Powered by Billbolt
         </Text>
       </View>

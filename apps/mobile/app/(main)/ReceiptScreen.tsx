@@ -23,6 +23,7 @@ export default function ReceiptScreen() {
     todayReceiptsCount,
     monthRevenue,
     growth,
+    isInitialLoading,
     openRecordSaleScreen,
     isScannerOpen,
     openScanner,
@@ -53,6 +54,7 @@ export default function ReceiptScreen() {
             receiptsToday={todayReceiptsCount}
             yesterdaySales={yesterdaySales}
             growth={growth}
+            loading={isInitialLoading}
           />
 
           {/* ── Record Sale & Scan CTA (Action Second) ────────────────── */}

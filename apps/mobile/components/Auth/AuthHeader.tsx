@@ -1,27 +1,34 @@
-import { View, Text } from 'react-native'
-import React from 'react'
-import logo from "@/assets/images/icon.png"
+import React from "react";
+import { View, Text } from "react-native";
+import { Image } from "expo-image";
+import logo from "@/assets/images/icon.png";
 
-import { Image } from 'expo-image';
-export default function AuthHeader({title, label}:{title: string, label: string}) {
+interface AuthHeaderProps {
+  title: string;
+  label: string;
+}
+
+export default function AuthHeader({ title, label }: AuthHeaderProps) {
   return (
-     <View className="w-full flex gap-2">
-            <View className="flex justify-center items-center ">
-              <Image
-                source={logo}
-                className="w-20 h-20 rounded-2xl"
-                contentFit="contain"
-              />
-            </View>
-            <View className="w-[90%] flex items-center justify-center gap-1 m-auto px-6 ">
-              <Text className="text-3xl font-poppins-bold text-center ">
-                {title}
-              </Text>
-              <Text className="text-bolt-slate font-poppins-medium text-center">
-               {label}
-              </Text>
-            </View>
-          </View>
+    <View className="w-full items-center mb-6">
+      {/* Brand Icon */}
+      <View className="mb-4">
+        <Image
+          source={logo}
+          className="w-16 h-16 rounded-2xl"
+          contentFit="contain"
+        />
+      </View>
 
-  )
+      {/* Proportional Heading Hierarchy */}
+      <View className="w-full items-center px-2">
+        <Text className="text-2xl font-poppins-bold text-bolt-graphite text-center tracking-tight">
+          {title}
+        </Text>
+        <Text className="text-sm font-inter text-bolt-slate text-center mt-1.5 leading-5 max-w-[320px]">
+          {label}
+        </Text>
+      </View>
+    </View>
+  );
 }

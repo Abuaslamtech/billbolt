@@ -18,6 +18,7 @@ import SecurityCheckIcon from '@hugeicons/core-free-icons/SecurityCheckIcon';
 
 import { Colors } from "@/lib/colors";
 import BackButton from "@/components/Elements/BackButton";
+import BrandLogo from "@/components/Elements/BrandLogo";
 import { Shadows } from "@/lib/styles";
 
 import { Image } from 'expo-image';
@@ -78,19 +79,11 @@ export default function AboutScreen() {
       >
         {/* Logo Hero */}
         <View className="items-center py-8 bg-bolt-card border-b border-bolt-border">
-          <View
-            style={Shadows.primaryButton}
-          >
-            <Image
-              source={billboltLogo}
-              style={{ width: 80, height: 80 }}
-              contentFit="contain"
-            />
-          </View>
-          <Text className="text-2xl font-poppins-bold text-bolt-blue">
+          <BrandLogo size={72} variant="symbol" />
+          <Text className="text-2xl font-inter-bold text-bolt-blue mt-3 tracking-tight">
             Billbolt
           </Text>
-          <Text className="text-xs font-inter-medium text-bolt-slate mt-0.5">
+          <Text className="text-xs font-inter-semibold text-bolt-slate mt-1 tracking-widest uppercase">
             Smart business made simple
           </Text>
 

@@ -14,7 +14,7 @@ export default function TopSellingProducts() {
   const { topProducts } = useAppDataStore();
 
   const handleViewAll = () => {
-    router.push("/(main)/InventoryScreen");
+    router.navigate("/(main)/InventoryScreen");
   };
 
   const displayList = topProducts.slice(0, 3);
@@ -66,7 +66,7 @@ export default function TopSellingProducts() {
               activeOpacity={0.75}
               accessibilityRole="button"
               accessibilityLabel={`View details for ${product.productName}`}
-              className="w-40 rounded-2xl p-3.5 bg-bolt-card border border-bolt-border mr-3 justify-between"
+              className="w-44 rounded-2xl p-3.5 bg-bolt-card border border-bolt-border mr-3 justify-between"
               style={Shadows.card}
             >
               {/* Top Row: Rank & Status */}
@@ -85,6 +85,7 @@ export default function TopSellingProducts() {
                   }`}
                 >
                   <Text
+                    numberOfLines={1}
                     className={`text-2xs font-inter-semibold ${
                       isOut
                         ? "text-bolt-danger-text"
@@ -106,15 +107,20 @@ export default function TopSellingProducts() {
                 {product.productName}
               </Text>
 
-              {/* Sales metrics — clean single row */}
-              <View className="pt-2 border-t border-bolt-divider flex-row items-center justify-between">
-                <View className="flex-row items-center gap-1">
+              {/* Sales metrics — clean resilient row */}
+              <View className="pt-2 border-t border-bolt-divider flex-row items-center justify-between gap-1">
+                <View className="flex-row items-center gap-1 shrink-0">
                   <HugeiconsIcon icon={Package01Icon} size={12} color={Colors.slate} />
-                  <Text className="font-inter text-2xs text-bolt-slate">
+                  <Text numberOfLines={1} className="font-inter text-2xs text-bolt-slate">
                     {product.totalUnitsSold} sold
                   </Text>
                 </View>
-                <Text className="font-poppins-bold text-bolt-blue text-xs">
+                <Text
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                  className="font-poppins-bold text-bolt-blue text-xs flex-1 text-right"
+                >
                   {fmt(product.totalRevenue)}
                 </Text>
               </View>

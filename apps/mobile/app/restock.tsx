@@ -28,6 +28,7 @@ import Toast from "react-native-toast-message";
 import BackButton from "@/components/Elements/BackButton";
 import BarcodeScannerModal from "@/components/Scanner/BarcodeScannerModal";
 import { QuantityPickerModal } from "@/components/Elements/QuantityPickerModal";
+import LoadingOverlay from "@/components/Elements/LoadingOverlay";
 import { Colors } from "@/lib/colors";
 import { formatCurrency, getCurrencySymbol } from "@/lib/formatters";
 import { useRestockScreen, RestockItem } from "@/hooks/useRestockScreen";
@@ -543,6 +544,13 @@ export default function RestockScreen() {
           }}
         />
       )}
+
+      {/* Screen-locking loader during restock confirmation */}
+      <LoadingOverlay
+        visible={isSubmitting}
+        message="Confirming Restock..."
+        submessage="Updating stock counts in database"
+      />
     </SafeAreaView>
   );
 }

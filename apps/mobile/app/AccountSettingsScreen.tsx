@@ -36,6 +36,7 @@ import FeaturePreviewModal from "@/components/Elements/FeaturePreviewModal";
 import BackButton from "@/components/Elements/BackButton";
 import ScreenHeader from "@/components/Elements/ScreenHeader";
 import { Button } from "@/components/Elements/Buton";
+import LoadingOverlay from "@/components/Elements/LoadingOverlay";
 import { useAccountSettingsScreen } from "@/hooks/useAccountSettingsScreen";
 
 import SettingRow from "@/components/Elements/SettingRow";
@@ -247,8 +248,12 @@ export default function AccountSettingsScreen() {
         </View>
       </ScrollView>
 
-      {/* ── EDIT PERSONAL PROFILE MODAL ── */}
-      <Modal visible={isEditProfileOpen} animationType="slide" transparent>
+      <Modal
+        visible={isEditProfileOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setIsEditProfileOpen(false)}
+      >
         <KeyboardAvoidingView
           behavior="padding"
           className="flex-1 justify-end bg-black/50"
@@ -329,6 +334,13 @@ export default function AccountSettingsScreen() {
         onClose={closePreviewFeature}
         title={previewFeature.title}
         description={previewFeature.description}
+      />
+
+      {/* Screen-locking loader during profile updates */}
+      <LoadingOverlay
+        visible={isSavingProfile || isUploadingAvatar}
+        message={isUploadingAvatar ? "Uploading Avatar..." : "Saving Profile..."}
+        submessage="Updating your operator account"
       />
     </SafeAreaView>
   );

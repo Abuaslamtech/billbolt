@@ -7,6 +7,8 @@ import {
   DashboardMetrics,
   ProductPerformance,
   CycleSummary,
+  DebtorCustomerSummary,
+  DebtRepayment,
 } from '@/types/models';
 import {
   initializeStorage,
@@ -17,6 +19,9 @@ import {
   addProduct,
   addRestock,
   createReceipt,
+  recordDebtRepayment,
+  getDebtRepayments,
+  computeDebtorsSummary,
   getBusinessInfo,
   getUserProfile,
   saveBusinessInfo,
@@ -28,7 +33,7 @@ import {
   getProductPerformanceList,
   getMonthlyCycleSummaries,
 } from '@/services/storage/analyticsEngine';
-import { cycleLabel, businessCycleStart } from '@/services/storage/cycleUtils';
+import { cycleLabel, businessCycleStart, cycleKey, formatYMD } from '@/services/storage/cycleUtils';
 
 interface AppDataState {
   isInitialized: boolean;
@@ -40,7 +45,9 @@ interface AppDataState {
   receipts: Receipt[];
   metrics: DashboardMetrics | null;
   topProducts: ProductPerformance[];
+  frequentProducts: ProductWithStock[];
   cycleSummaries: CycleSummary[];
+  debtors: DebtorCustomerSummary[];
 
   // Actions
   init: () => Promise<void>;
@@ -65,11 +72,22 @@ interface AppDataState {
     customerPhone?: string;
     items: { productId: string; qty: number }[];
     paymentMethod?: Receipt['paymentMethod'];
+    depositAmount?: number;
+    dueDate?: string;
     soldBy?: string;
     notes?: string;
     date?: string;
     discount?: number;
   }) => Promise<Receipt>;
+  recordRepayment: (input: {
+    receiptId?: string;
+    customerPhone: string;
+    customerName: string;
+    amount: number;
+    paymentMethod?: 'Cash' | 'Transfer' | 'Card';
+    date?: string;
+    note?: string;
+  }) => Promise<DebtRepayment>;
   updateBusiness: (info: Partial<BusinessInfo>) => Promise<void>;
   reset: () => void;
 }
@@ -84,7 +102,9 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
   receipts: [],
   metrics: null,
   topProducts: [],
+  frequentProducts: [],
   cycleSummaries: [],
+  debtors: [],
 
   init: async () => {
     try {
@@ -137,19 +157,44 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
       // ─── Offline Fallback: Derive metrics if server analytics is unavailable ──
       if (!metrics || metricsRes.status !== 'fulfilled') {
         const now = new Date();
-        const todayStr = now.toISOString().split('T')[0];
-        const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        const todayStr = formatYMD(now);
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = formatYMD(yesterday);
+
+        const isDateToday = (dateVal?: string) => {
+          if (!dateVal) return false;
+          if (dateVal.startsWith(todayStr)) return true;
+          try {
+            return formatYMD(dateVal) === todayStr;
+          } catch {
+            return false;
+          }
+        };
+
+        const isDateYesterday = (dateVal?: string) => {
+          if (!dateVal) return false;
+          if (dateVal.startsWith(yesterdayStr)) return true;
+          try {
+            return formatYMD(dateVal) === yesterdayStr;
+          } catch {
+            return false;
+          }
+        };
 
         // Receipts are primary source of truth; fall back to sales if empty
-        const todayReceipts = receipts.filter((r) => (r.date || r.createdAt)?.startsWith(todayStr));
+        const todayReceipts = receipts.filter((r) => isDateToday(r.date) || isDateToday(r.createdAt));
+        const todaySalesRecords = sales.filter((s) => isDateToday(s.date) || isDateToday(s.createdAt));
+
         const todaySales = todayReceipts.length > 0
           ? todayReceipts.reduce((sum, r) => sum + r.total, 0)
-          : sales.filter((s) => s.date?.startsWith(todayStr)).reduce((sum, s) => sum + s.revenue, 0);
+          : todaySalesRecords.reduce((sum, s) => sum + s.revenue, 0);
 
-        const yesterdayReceipts = receipts.filter((r) => (r.date || r.createdAt)?.startsWith(yesterdayStr));
+        const yesterdayReceipts = receipts.filter((r) => isDateYesterday(r.date) || isDateYesterday(r.createdAt));
+        const yesterdaySalesRecords = sales.filter((s) => isDateYesterday(s.date) || isDateYesterday(s.createdAt));
         const yesterdaySales = yesterdayReceipts.length > 0
           ? yesterdayReceipts.reduce((sum, r) => sum + r.total, 0)
-          : sales.filter((s) => s.date?.startsWith(yesterdayStr)).reduce((sum, s) => sum + s.revenue, 0);
+          : yesterdaySalesRecords.reduce((sum, s) => sum + s.revenue, 0);
 
         let todaySalesGrowth = 0;
         if (yesterdaySales > 0) {
@@ -159,8 +204,38 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
         }
 
         const currentCycleStart = businessCycleStart(now);
-        const thisMonthRevenue = sales.reduce((sum, s) => sum + s.revenue, 0);
-        const thisMonthProfit = sales.reduce((sum, s) => sum + s.profit, 0);
+        const currentCycle = cycleKey(now);
+
+        // Current cycle revenue: receipts are primary (matching backend); fall back to sales
+        const cycleReceipts = receipts.filter(
+          (r) => r.cycle === currentCycle || (r.date && cycleKey(r.date) === currentCycle),
+        );
+        const cycleSales = sales.filter((s) => s.cycle === currentCycle);
+
+        const thisMonthRevenue = cycleReceipts.length > 0
+          ? cycleReceipts.reduce((sum, r) => sum + r.total, 0)
+          : cycleSales.reduce((sum, s) => sum + s.revenue, 0);
+        const thisMonthProfit = cycleSales.reduce((sum, s) => sum + s.profit, 0);
+
+        // Previous cycle revenue for month-over-month growth
+        const prevCycleStart = new Date(currentCycleStart);
+        prevCycleStart.setMonth(prevCycleStart.getMonth() - 1);
+        const prevCycle = cycleKey(prevCycleStart);
+        const prevCycleReceipts = receipts.filter(
+          (r) => r.cycle === prevCycle || (r.date && cycleKey(r.date) === prevCycle),
+        );
+        const prevCycleSales = sales.filter((s) => s.cycle === prevCycle);
+        const prevMonthRevenue = prevCycleReceipts.length > 0
+          ? prevCycleReceipts.reduce((sum, r) => sum + r.total, 0)
+          : prevCycleSales.reduce((sum, s) => sum + s.revenue, 0);
+
+        let thisMonthGrowth = 0;
+        if (prevMonthRevenue > 0) {
+          thisMonthGrowth = Math.round(((thisMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100);
+        } else if (thisMonthRevenue > 0) {
+          thisMonthGrowth = 100;
+        }
+
         const totalReceiptsCount = receipts.length;
         const totalCustomersCount = new Set(
           receipts.map((r) => r.customerName?.toLowerCase().trim()).filter(Boolean),
@@ -171,18 +246,55 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
           (p) => p.currentStock > 0 && p.currentStock <= p.reorderLevel,
         ).length;
 
+        let todayCash = todayReceipts
+          .filter((r) => r.paymentMethod === "Cash")
+          .reduce((sum, r) => sum + (r.amountPaid !== undefined ? r.amountPaid : r.total), 0);
+        let todayTransfer = todayReceipts
+          .filter((r) => r.paymentMethod === "Transfer")
+          .reduce((sum, r) => sum + (r.amountPaid !== undefined ? r.amountPaid : r.total), 0);
+        let todayCard = todayReceipts
+          .filter((r) => r.paymentMethod === "Card")
+          .reduce((sum, r) => sum + (r.amountPaid !== undefined ? r.amountPaid : r.total), 0);
+
+        // Include debt repayments collected today into cash flow
+        const cachedRepayments = await getDebtRepayments();
+        const todayRepayments = cachedRepayments.filter((rep) => isDateToday(rep.date) || isDateToday(rep.createdAt));
+        const todayRepayCash = todayRepayments.filter((r) => r.paymentMethod === 'Cash').reduce((s, r) => s + r.amount, 0);
+        const todayRepayTransfer = todayRepayments.filter((r) => r.paymentMethod === 'Transfer').reduce((s, r) => s + r.amount, 0);
+        const todayRepayCard = todayRepayments.filter((r) => r.paymentMethod === 'Card').reduce((s, r) => s + r.amount, 0);
+        todayCash += todayRepayCash;
+        todayTransfer += todayRepayTransfer;
+        todayCard += todayRepayCard;
+
+        // Fallback: If todaySales > 0 but receipts had no paymentMethod or sales were from legacy sales array
+        if (todaySales > 0 && todayCash === 0 && todayTransfer === 0 && todayCard === 0) {
+          todayCash = todaySales;
+        }
+
+        const debtors = computeDebtorsSummary(receipts);
+        const totalOutstandingDebt = debtors.reduce((sum, d) => sum + d.remainingBalance, 0);
+        const totalDebtorsCount = debtors.length;
+        const overdueDebtorsCount = debtors.filter((d) => d.isOverdue).length;
+
         metrics = {
           todaySales,
           yesterdaySales,
           todaySalesGrowth,
           thisMonthRevenue,
           thisMonthProfit,
-          thisMonthGrowth: 0,
+          thisMonthGrowth,
           totalReceiptsCount,
           totalCustomersCount,
           productsTracked: products.length,
           needReorderCount,
           outOfStockCount,
+          todayCash,
+          todayTransfer,
+          todayCard,
+          totalDebtorsCount,
+          totalOutstandingDebt,
+          overdueDebtorsCount,
+          currentCycle,
           currentCycleLabel: cycleLabel(currentCycleStart),
         };
       }
@@ -212,14 +324,46 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
         }).sort((a, b) => b.totalRevenue - a.totalRevenue);
       }
 
+      // ─── Production-Grade Velocity Indexing: Calculate Frequent Products ───
+      const salesCountMap = new Map<string, number>();
+      receipts.forEach((r) => {
+        (r.items || []).forEach((item) => {
+          if (item.productId) {
+            salesCountMap.set(item.productId, (salesCountMap.get(item.productId) || 0) + (item.quantity || (item as any).qty || 1));
+          }
+        });
+      });
+      sales.forEach((s) => {
+        if (s.productId) {
+          salesCountMap.set(s.productId, (salesCountMap.get(s.productId) || 0) + (s.qty || 1));
+        }
+      });
+
+      const frequentProducts = products
+        .filter((p) => p.currentStock > 0)
+        .sort((a, b) => {
+          const countA = salesCountMap.get(a.id) || 0;
+          const countB = salesCountMap.get(b.id) || 0;
+          if (countB !== countA) {
+            return countB - countA;
+          }
+          // Cold-start tie breaker: rank highest in-stock items first
+          return b.currentStock - a.currentStock;
+        })
+        .slice(0, 5);
+
+      const debtors = computeDebtorsSummary(receipts);
+
       set({
         businessInfo,
         products,
         sales,
         restocks,
         receipts,
+        debtors,
         metrics,
         topProducts,
+        frequentProducts,
         cycleSummaries,
       });
     } catch (error) {
@@ -244,6 +388,12 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
     return receipt;
   },
 
+  recordRepayment: async (input) => {
+    const rep = await recordDebtRepayment(input);
+    await get().refresh();
+    return rep;
+  },
+
   updateBusiness: async (info) => {
     const updated = await saveBusinessInfo(info);
     set({ businessInfo: updated });
@@ -258,8 +408,10 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
       sales: [],
       restocks: [],
       receipts: [],
+      debtors: [],
       metrics: null,
       topProducts: [],
+      frequentProducts: [],
       cycleSummaries: [],
     });
   },

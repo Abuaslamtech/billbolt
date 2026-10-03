@@ -1,53 +1,50 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
-import { CreateProductDto, CreateRestockDto, UpdateProductDto } from './dto/inventory.dto';
-
-/** Billing cycle: 14th–13th of the following month */
-function cycleKey(date: Date): string {
-  const d = date.getDate();
-  const m = date.getMonth(); // 0-indexed
-  const y = date.getFullYear();
-  if (d >= 14) {
-    const start = new Date(y, m, 14);
-    const end = new Date(y, m + 1, 13);
-    return `${start.toISOString().split('T')[0]}_${end.toISOString().split('T')[0]}`;
-  } else {
-    const start = new Date(y, m - 1, 14);
-    const end = new Date(y, m, 13);
-    return `${start.toISOString().split('T')[0]}_${end.toISOString().split('T')[0]}`;
-  }
-}
-
+import { cycleKey, formatYMD, parseDateSafe } from 'src/common/utils/cycle.utils';
+import {
+  CreateProductDto,
+  CreateRestockDto,
+  UpdateProductDto,
+} from './dto/inventory.dto';
 
 @Injectable()
 export class InventoryService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   // ─── Products ────────────────────────────────────────────────────────────────
 
-  async getProducts(businessId: string) {
-    return this.prisma.product.findMany({
-      where: { businessId },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
   async getProductsWithStock(businessId: string) {
-    const [products, restocks, sales] = await Promise.all([
-      this.prisma.product.findMany({ where: { businessId }, orderBy: { createdAt: 'desc' } }),
-      this.prisma.restock.findMany({ where: { businessId } }),
-      this.prisma.sale.findMany({ where: { businessId } }),
+    const [products, restockGroups, saleGroups] = await Promise.all([
+      this.prisma.product.findMany({
+        where: { businessId },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.restock.groupBy({
+        by: ['productId'],
+        where: { businessId },
+        _sum: { qty: true },
+      }),
+      this.prisma.sale.groupBy({
+        by: ['productId'],
+        where: { businessId },
+        _sum: { qty: true },
+      }),
     ]);
 
+    const restockMap = new Map(
+      restockGroups.map((r) => [r.productId, r._sum.qty ?? 0]),
+    );
+    const saleMap = new Map(
+      saleGroups.map((s) => [s.productId, s._sum.qty ?? 0]),
+    );
+
     return products.map((p) => {
-      const totalRestocked = restocks
-        .filter((r) => r.productId === p.id)
-        .reduce((sum, r) => sum + r.qty, 0);
-
-      const totalSold = sales
-        .filter((s) => s.productId === p.id)
-        .reduce((sum, s) => sum + s.qty, 0);
-
+      const totalRestocked = restockMap.get(p.id) ?? 0;
+      const totalSold = saleMap.get(p.id) ?? 0;
       const currentStock = p.openingStock + totalRestocked - totalSold;
 
       let status: 'In Stock' | 'Low Stock' | 'Out of Stock' = 'In Stock';
@@ -67,7 +64,9 @@ export class InventoryService {
 
   async createProduct(businessId: string, dto: CreateProductDto) {
     if (!businessId) {
-      throw new BadRequestException('User does not have an active business registered. Please complete store setup.');
+      throw new BadRequestException(
+        'User does not have an active business registered. Please complete store setup.',
+      );
     }
     return this.prisma.product.create({
       data: {
@@ -83,7 +82,11 @@ export class InventoryService {
     });
   }
 
-  async updateProduct(productId: string, businessId: string, dto: UpdateProductDto) {
+  async updateProduct(
+    productId: string,
+    businessId: string,
+    dto: UpdateProductDto,
+  ) {
     const product = await this.prisma.product.findFirst({
       where: { id: productId, businessId },
     });
@@ -97,10 +100,13 @@ export class InventoryService {
 
   // ─── Restocks ────────────────────────────────────────────────────────────────
 
-  async getRestocks(businessId: string) {
+  async getRestocks(businessId: string, limit = 100) {
+    if (!businessId) return [];
+    const safeLimit = Math.min(Math.max(1, limit), 100);
     return this.prisma.restock.findMany({
       where: { businessId },
       orderBy: { createdAt: 'desc' },
+      take: safeLimit,
     });
   }
 
@@ -108,23 +114,36 @@ export class InventoryService {
     const product = await this.prisma.product.findFirst({
       where: { id: dto.productId, businessId },
     });
-    if (!product) throw new BadRequestException('Product not found in this business');
+    if (!product)
+      throw new BadRequestException('Product not found in this business');
 
-    const restockDate = dto.date ? new Date(dto.date) : new Date();
-    const dateStr = restockDate.toISOString().split('T')[0];
+    const restockDate = parseDateSafe(dto.date);
+    if (isNaN(restockDate.getTime())) {
+      throw new BadRequestException('Invalid restock date');
+    }
+    const dateStr = formatYMD(restockDate);
 
-    return this.prisma.restock.create({
-      data: {
-        businessId,
-        productId: product.id,
-        productName: product.name,
-        date: dateStr,
-        cycle: cycleKey(restockDate),
-        qty: dto.qty,
-        costPerUnit: dto.costPerUnit,
-        totalCost: dto.qty * dto.costPerUnit,
-        notes: dto.notes,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const restock = await tx.restock.create({
+        data: {
+          businessId,
+          productId: product.id,
+          productName: product.name,
+          date: dateStr,
+          cycle: cycleKey(restockDate),
+          qty: dto.qty,
+          costPerUnit: dto.costPerUnit,
+          totalCost: dto.qty * dto.costPerUnit,
+          notes: dto.notes,
+        },
+      });
+
+      await tx.product.update({
+        where: { id: product.id },
+        data: { costPrice: dto.costPerUnit },
+      });
+
+      return restock;
     });
   }
 }

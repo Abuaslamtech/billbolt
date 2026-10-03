@@ -58,7 +58,7 @@ export function ProgressIndicator({
           </Text>
         ) : null}
         {subtitle ? (
-          <Text className="text-bolt-slate font-inter text-xs text-center mt-1 leading-5">
+          <Text className="text-bolt-slate font-inter text-sm text-center mt-1.5 leading-5 max-w-[300px]">
             {subtitle}
           </Text>
         ) : null}

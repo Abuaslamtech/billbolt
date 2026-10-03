@@ -99,6 +99,7 @@ export function useAccountSettingsScreen() {
   };
 
   const handleSaveProfile = async () => {
+    if (isSavingProfile) return;
     if (!editFullName.trim()) {
       Toast.show({
         type: "error",

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import {
-Animated,
+  Animated,
   Dimensions,
   FlatList,
   NativeScrollEvent,
@@ -56,7 +56,7 @@ const SLIDES: SlideData[] = [
     title: "Branded Receipts &\nReal-Time Insights",
     description:
       "Issue professional WhatsApp or PDF receipts to build customer trust, and track daily revenue and top sellers in real time.",
-    image: require("@/assets/images/access.png"),
+    image: require("@/assets/images/receipts.png"),
   },
 ];
 
@@ -64,7 +64,7 @@ export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isNotificationPromptOpen, setIsNotificationPromptOpen] = useState(false);
   const flatListRef = useRef<FlatList<SlideData>>(null);
-  const scrollX = useRef(new Animated.Value(0)).current;
+  const [scrollX] = useState(() => new Animated.Value(0));
 
   // Spring button animation
   const buttonScale = useSharedValue(1);
@@ -141,6 +141,7 @@ export default function OnboardingScreen() {
         showsHorizontalScrollIndicator={false}
         bounces={false}
         scrollEventThrottle={16}
+        className="flex-1"
         onMomentumScrollEnd={onMomentumScrollEnd}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
@@ -150,27 +151,33 @@ export default function OnboardingScreen() {
           return (
             <View
               style={{ width: SCREEN_WIDTH }}
-              className="px-6 items-center justify-between pt-2 pb-6"
+              className="flex-1 px-6 items-center justify-between pb-2"
             >
-              {/* Natural Illustration Artwork — Borderless & Spacious */}
-              <View
-                style={{ width: SCREEN_WIDTH * 0.82, height: SCREEN_HEIGHT * 0.38 }}
-                className="items-center justify-center mt-2"
-              >
-                <Image
-                  source={item.image}
-                  className="w-full h-full"
-                  contentFit="contain"
-                />
+              {/* Natural Illustration Artwork — Borderless, Vertically Centered Hero */}
+              <View className="flex-1 w-full items-center justify-center">
+                <View
+                  style={{
+                    width: SCREEN_WIDTH * 0.86,
+                    height: Math.min(SCREEN_HEIGHT * 0.40, 360),
+                  }}
+                  className="items-center justify-center"
+                >
+                  <Image
+                    source={item.image}
+                    className="w-full h-full"
+                    contentFit="contain"
+                    transition={200}
+                  />
+                </View>
               </View>
 
               {/* Text & Content Section — Centered Editorial Balance */}
-              <View className="w-full items-center px-3 mb-2">
+              <View className="w-full items-center px-3 mb-4">
                 <Text className="text-2xl text-bolt-graphite font-poppins-bold text-center mb-2.5 leading-8">
                   {item.title}
                 </Text>
 
-                <Text className="text-sm text-bolt-slate font-inter text-center leading-6">
+                <Text className="text-sm text-bolt-slate font-inter text-center leading-6 max-w-[340px]">
                   {item.description}
                 </Text>
               </View>
@@ -242,10 +249,10 @@ export default function OnboardingScreen() {
           <Pressable
             onPress={handleNext}
             onPressIn={() => {
-              buttonScale.value = withSpring(0.97, { stiffness: 400, damping: 15 });
+              buttonScale.set(withSpring(0.97, { stiffness: 400, damping: 15 }));
             }}
             onPressOut={() => {
-              buttonScale.value = withSpring(1, { stiffness: 400, damping: 15 });
+              buttonScale.set(withSpring(1, { stiffness: 400, damping: 15 }));
             }}
             className="flex-row items-center justify-center h-14 px-6 gap-2.5"
           >

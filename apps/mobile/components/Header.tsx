@@ -41,7 +41,6 @@ const Header = () => {
   const businessName =
     userData?.business?.name ||
     businessInfo?.name ||
-    userData?.fullName ||
     "My Business";
 
   const storeLogo = businessInfo?.logoUrl || userData?.business?.logoUrl;

@@ -39,7 +39,7 @@ export function Button({
   disabled,
   isChecked,
 }: ButtonProps) {
-  const isDisabled = disabled || !isChecked;
+  const isDisabled = Boolean(disabled) || Boolean(loading) || isChecked === false;
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -48,12 +48,17 @@ export function Button({
 
   const handlePressIn = () => {
     if (!isDisabled) {
-      scale.value = withSpring(0.97, { stiffness: 400, damping: 15 });
+      scale.set(withSpring(0.97, { stiffness: 400, damping: 15 }));
     }
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, { stiffness: 400, damping: 15 });
+    scale.set(withSpring(1, { stiffness: 400, damping: 15 }));
+  };
+
+  const handlePress = (e: GestureResponderEvent) => {
+    if (isDisabled) return;
+    onPress(e);
   };
 
   const resolvedIcon =
@@ -76,7 +81,7 @@ export function Button({
                 elevation: 4,
               }
         }
-        onPress={onPress}
+        onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={isDisabled}

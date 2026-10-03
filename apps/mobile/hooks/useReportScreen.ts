@@ -5,10 +5,14 @@ import {
   getMonthlyCycleSummaries,
   getProductPerformanceList,
 } from "@/services/storage/analyticsEngine";
-import { CycleSummary, ProductPerformance } from "@/types/models";
-import { Colors } from "@/lib/colors";
+import { CycleSummary } from "@/types/models";
 
-import { formatCurrency } from "@/lib/formatters";
+import { parseDateSafe } from "@/services/storage/cycleUtils";
+import { formatCurrency, formatSignedCurrency } from "@/lib/formatters";
+
+function normalizeZero(n: number): number {
+  return Object.is(n, -0) || n === 0 ? 0 : n;
+}
 
 export type Timeframe = "this_month" | "last_month" | "this_week";
 
@@ -17,11 +21,11 @@ export function formatPeriodLabel(cycle: string): string {
   const parts = cycle.split("_");
   if (parts.length === 2) {
     const fmtDate = (s: string) => {
-      const d = new Date(s);
+      const d = parseDateSafe(s);
       if (isNaN(d.getTime())) return s;
       return d.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
     };
-    const year = new Date(parts[1]).getFullYear();
+    const year = parseDateSafe(parts[1]).getFullYear();
     return `${fmtDate(parts[0])} – ${fmtDate(parts[1])}, ${year}`;
   }
   return cycle;
@@ -32,18 +36,16 @@ export function useReportScreen() {
 
   const [timeframe, setTimeframe] = useState<Timeframe>("this_month");
   const [rawCycleData, setRawCycleData] = useState<CycleSummary[]>([]);
-  const [rawProductData, setRawProductData] = useState<ProductPerformance[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     try {
-      const [cycles, products] = await Promise.all([
+      const [cycles] = await Promise.all([
         getMonthlyCycleSummaries(),
         getProductPerformanceList(),
       ]);
       setRawCycleData(cycles || []);
-      setRawProductData(products || []);
     } catch {
       // Graceful fallback
     } finally {
@@ -52,6 +54,7 @@ export function useReportScreen() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
   }, []);
 
@@ -67,12 +70,13 @@ export function useReportScreen() {
     return rawCycleData.map((c) => {
       const rev = c.revenue ?? 0;
       const prof = c.profit ?? 0;
-      const margin =
+      const rawMargin =
         c.margin != null
           ? Number(c.margin)
           : rev > 0
           ? Math.round((prof / rev) * 100)
           : 0;
+      const margin = normalizeZero(rawMargin);
 
       let units = c.unitsSold;
       if (units == null) {
@@ -107,7 +111,8 @@ export function useReportScreen() {
       const rev = weekSales.reduce((sum, s) => sum + (s.revenue ?? 0), 0);
       const prof = weekSales.reduce((sum, s) => sum + (s.profit ?? 0), 0);
       const cost = weekSales.reduce((sum, s) => sum + (s.cost ?? 0), 0);
-      const margin = rev > 0 ? Math.round((prof / rev) * 100) : 0;
+      const rawMargin = rev > 0 ? Math.round((prof / rev) * 100) : 0;
+      const margin = normalizeZero(rawMargin);
       const units = weekSales.reduce((sum, s) => sum + (s.qty ?? 0), 0);
 
       const weekRestocks = (restocks || []).filter((r) => {
@@ -133,8 +138,9 @@ export function useReportScreen() {
         const rev = prev.revenue;
         const prof = prev.profit;
         const cost = Math.max(0, rev - prof);
-        const margin =
+        const rawMargin =
           prev.margin ?? (rev > 0 ? Math.round((prof / rev) * 100) : 0);
+        const margin = normalizeZero(rawMargin);
         const units = prev.unitsSold;
         const restockSpend = prev.restockSpend;
         return {
@@ -164,8 +170,9 @@ export function useReportScreen() {
     const rev = currentCycle?.revenue ?? 0;
     const prof = currentCycle?.profit ?? 0;
     const cost = Math.max(0, rev - prof);
-    const margin =
+    const rawMargin =
       currentCycle?.margin ?? (rev > 0 ? Math.round((prof / rev) * 100) : 0);
+    const margin = normalizeZero(rawMargin);
     const units = currentCycle?.unitsSold ?? 0;
     const restockSpend = currentCycle?.restockSpend ?? 0;
     return {
@@ -179,18 +186,22 @@ export function useReportScreen() {
     };
   }, [timeframe, currentCycle, cycleData, sales, restocks]);
 
-  const profitPct =
+  const rawProfitPct =
     selectedStats.revenue > 0
       ? Math.round((selectedStats.profit / selectedStats.revenue) * 100)
       : 0;
-  const costPct = selectedStats.revenue > 0 ? 100 - profitPct : 0;
+  const profitPct = normalizeZero(rawProfitPct);
+  const costPct =
+    selectedStats.revenue > 0
+      ? Math.max(0, Math.min(100, 100 - profitPct))
+      : 0;
 
   const profitPerThousand = useMemo(() => {
-    return Math.round((selectedStats.margin / 100) * 1000);
+    return normalizeZero(Math.round((selectedStats.margin / 100) * 1000));
   }, [selectedStats.margin]);
 
   const netCashFlow = useMemo(() => {
-    return selectedStats.revenue - selectedStats.restockSpend;
+    return normalizeZero(selectedStats.revenue - selectedStats.restockSpend);
   }, [selectedStats.revenue, selectedStats.restockSpend]);
 
   // ─── Timeframe-Specific Top Money Makers ──────────────────────────────────
@@ -266,5 +277,6 @@ export function useReportScreen() {
     topMoneyMakers,
     fmt: formatCurrency,
     fmtFull: formatCurrency,
+    fmtSigned: formatSignedCurrency,
   };
 }

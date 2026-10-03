@@ -4,12 +4,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import * as crypto from 'crypto';
 import { Express } from 'express';
 import { PrismaService } from 'prisma/prisma.service';
-import { JwtPayload } from 'src/auth/strategies/jwt.strategy';
+import { AuthService } from 'src/auth/auth.service';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
@@ -18,8 +15,7 @@ import { UpdateBusinessDto } from './dto/update-business.dto';
 export class BusinessService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    private readonly authService: AuthService,
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
@@ -38,74 +34,50 @@ export class BusinessService {
       throw new ConflictException('User already has a registered business');
     }
 
-    const newBusiness = await this.prismaService.business.create({
-      data: {
-        name: data.name,
-        type: data.type,
-        address: data.address,
-        phone: data.phone || user.phone,
-        email: data.email || user.email,
-        currency: data.currency || 'NGN',
-        logoUrl: data.logoUrl || null,
-        ownerId: user.id,
-      },
-    });
-
-    // Update user phone if provided
+    // Prevent phone collision if assigning new phone to user
     if (data.phone && !user.phone) {
-      await this.prismaService.user.update({
-        where: { id: user.id },
-        data: { phone: data.phone },
+      const existingPhone = await this.prismaService.user.findFirst({
+        where: { phone: data.phone, NOT: { id: user.id } },
       });
+      if (existingPhone) {
+        throw new ConflictException(
+          'An account with this phone number already exists',
+        );
+      }
     }
 
-    const updatedUser = await this.prismaService.user.findUniqueOrThrow({
-      where: { id: user.id },
-      include: { business: true },
+    const newBusiness = await this.prismaService.$transaction(async (tx) => {
+      const created = await tx.business.create({
+        data: {
+          name: data.name,
+          type: data.type,
+          address: data.address,
+          phone: data.phone || user.phone,
+          email: data.email || user.email,
+          currency: data.currency || 'NGN',
+          logoUrl: data.logoUrl || null,
+          ownerId: user.id,
+        },
+      });
+
+      // Update user phone if provided
+      if (data.phone && !user.phone) {
+        await tx.user.update({
+          where: { id: user.id },
+          data: { phone: data.phone },
+        });
+      }
+
+      return created;
     });
 
-    // Generate fresh JWT token containing the new businessId
-    const payload: JwtPayload = {
-      sub: updatedUser.id,
-      email: updatedUser.email,
-      businessId: newBusiness.id,
-      role: updatedUser.role,
-    };
-
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.getOrThrow('JWT_SECRET'),
-      expiresIn: '15m',
-    });
-
-    const refreshToken = crypto.randomBytes(64).toString('hex');
-    const expiry = new Date();
-    expiry.setDate(expiry.getDate() + 30);
-
-    await this.prismaService.refreshToken.deleteMany({ where: { userId } });
-    await this.prismaService.refreshToken.create({
-      data: {
-        userId,
-        token: refreshToken,
-        expiresAt: expiry,
-      },
-    });
+    const auth = await this.authService.buildAuthResponse(user.id);
 
     return {
       success: true,
       message: 'Business created successfully',
-      accessToken,
-      refreshToken,
+      ...auth,
       business: newBusiness,
-      user: {
-        id: updatedUser.id,
-        email: updatedUser.email,
-        fullName: updatedUser.fullName,
-        phone: updatedUser.phone,
-        avatarUrl: updatedUser.avatarUrl,
-        role: updatedUser.role,
-        credit: updatedUser.credit,
-        business: updatedUser.business,
-      },
     };
   }
 
@@ -138,17 +110,27 @@ export class BusinessService {
     });
   }
 
-  async findAll() {
-    return this.prismaService.business.findMany();
-  }
-
-  async findOne(id: string) {
-    return this.prismaService.business.findUnique({
-      where: { id },
+  async findOne(id: string, userId: string) {
+    const business = await this.prismaService.business.findFirst({
+      where: { id, ownerId: userId },
     });
+
+    if (!business) {
+      throw new NotFoundException('Business not found or unauthorized');
+    }
+
+    return business;
   }
 
-  async remove(id: string) {
+  async remove(id: string, userId: string) {
+    const business = await this.prismaService.business.findFirst({
+      where: { id, ownerId: userId },
+    });
+
+    if (!business) {
+      throw new NotFoundException('Business not found or unauthorized');
+    }
+
     return this.prismaService.business.delete({
       where: { id },
     });
@@ -172,7 +154,13 @@ export class BusinessService {
       const result = await this.cloudinaryService.uploadImage(
         logo,
         `business_logo/${business.id}`,
-        [{ width: 600, height: 600, crop: 'limit', quality: 'auto' }],
+        {
+          publicId: 'logo',
+          overwrite: true,
+          transformation: [
+            { width: 600, height: 600, crop: 'limit', quality: 'auto' },
+          ],
+        },
       );
 
       const updated = await this.prismaService.business.update({

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   FlatList,
   Modal,
@@ -21,9 +21,11 @@ import CheckmarkCircle02Icon from "@hugeicons/core-free-icons/CheckmarkCircle02I
 import { Colors } from "@/lib/colors";
 import { Button } from "@/components/Elements/Buton";
 import { InputField } from "@/components/Elements/InputField";
+import LoadingOverlay from "@/components/Elements/LoadingOverlay";
 import { useSetupShopWizard } from "@/hooks/useSetupShopWizard";
 
 export default function SetupShopWizard() {
+  const scrollRef = useRef<any>(null);
   const {
     currentStep,
     shopName,
@@ -41,6 +43,8 @@ export default function SetupShopWizard() {
     submitting,
     isStep1Valid,
     isStep2Valid,
+    isStep3Valid,
+    phoneError,
     handleNextStep,
     handlePrevStep,
     handleSelectArchetype,
@@ -50,6 +54,15 @@ export default function SetupShopWizard() {
   } = useSetupShopWizard();
 
   const [currencySearch, setCurrencySearch] = useState("");
+
+  const onSelectArchetype = (archetype: (typeof archetypes)[number]) => {
+    handleSelectArchetype(archetype);
+    if (archetype.value === "custom") {
+      setTimeout(() => {
+        scrollRef.current?.scrollToEnd?.(true);
+      }, 150);
+    }
+  };
 
   const filteredCurrencies = currencies.filter(
     (item) =>
@@ -102,12 +115,16 @@ export default function SetupShopWizard() {
       </View>
 
       <KeyboardAwareScrollView
+        ref={scrollRef}
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: 32 }}
+        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: 48 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        enableOnAndroid={false}
-        extraScrollHeight={20}
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        extraScrollHeight={120}
+        extraHeight={120}
+        keyboardOpeningTime={0}
       >
         {/* CARD 1: Shop Name */}
         {currentStep === 1 ? (
@@ -170,7 +187,7 @@ export default function SetupShopWizard() {
                   return (
                     <TouchableOpacity
                       key={archetype.id}
-                      onPress={() => handleSelectArchetype(archetype)}
+                      onPress={() => onSelectArchetype(archetype)}
                       className={`w-[48%] rounded-2xl p-3.5 border flex-col items-center justify-center min-h-[96px] ${
                         isSelected
                           ? "bg-bolt-light border-bolt-blue"
@@ -255,6 +272,11 @@ export default function SetupShopWizard() {
                   keyboardType="phone-pad"
                   autoComplete="tel"
                 />
+                {phoneError ? (
+                  <Text className="ml-2 mt-1.5 text-xs text-bolt-danger-text font-inter">
+                    * {phoneError}
+                  </Text>
+                ) : null}
               </View>
 
               {/* Currency Selector Tile */}
@@ -296,25 +318,15 @@ export default function SetupShopWizard() {
               </View>
             </View>
 
-            <View className="mt-4 gap-3">
+            <View className="mt-4">
               <Button
                 label={submitting ? "Setting up Shop..." : "Complete Shop Setup"}
-                onPress={() => handleSubmit(false)}
+                onPress={handleSubmit}
                 iconName={CheckmarkCircle02Icon}
-                isChecked={true}
-                disabled={submitting}
+                isChecked={isStep3Valid}
+                disabled={!isStep3Valid || submitting}
                 loading={submitting}
               />
-
-              <TouchableOpacity
-                onPress={() => handleSubmit(true)}
-                disabled={submitting}
-                className="items-center py-2 active:opacity-70"
-              >
-                <Text className="text-xs font-inter-medium text-bolt-slate">
-                  I will add contact phone later
-                </Text>
-              </TouchableOpacity>
             </View>
           </View>
         ) : null}
@@ -376,17 +388,22 @@ export default function SetupShopWizard() {
                       : "bg-bolt-card border-bolt-border"
                   }`}
                 >
-                  <View className="flex-row items-center gap-3">
-                    <View className="w-8 h-8 rounded-lg bg-bolt-surface items-center justify-center">
-                      <Text className="text-xs font-inter-bold text-bolt-graphite">
+                  <View className="flex-row items-center gap-3 flex-1 mr-2">
+                    <View className="min-w-[48px] h-10 px-2 rounded-xl bg-bolt-surface items-center justify-center border border-bolt-border/60">
+                      <Text
+                        className="text-xs font-inter-bold text-bolt-graphite text-center"
+                        numberOfLines={1}
+                        adjustsFontSizeToFit={true}
+                        minimumFontScale={0.8}
+                      >
                         {item.symbol}
                       </Text>
                     </View>
-                    <View>
+                    <View className="flex-1">
                       <Text className="text-sm font-inter-semibold text-bolt-graphite">
                         {item.code}
                       </Text>
-                      <Text className="text-xs font-inter text-bolt-slate">
+                      <Text className="text-xs font-inter text-bolt-slate" numberOfLines={1}>
                         {item.name}
                       </Text>
                     </View>
@@ -404,6 +421,13 @@ export default function SetupShopWizard() {
           />
         </SafeAreaView>
       </Modal>
+
+      {/* Screen-locking loader during business creation */}
+      <LoadingOverlay
+        visible={submitting}
+        message="Setting Up Your Shop..."
+        submessage="Creating store ledger and profile"
+      />
     </SafeAreaView>
   );
 }

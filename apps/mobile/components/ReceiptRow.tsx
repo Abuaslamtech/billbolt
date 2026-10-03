@@ -44,17 +44,17 @@ export default function ReceiptRow({ receipt, isLast = false, onPress }: Receipt
           {receipt.customerName || "Walk-in Customer"}
         </Text>
 
-        <View className="flex-row items-center gap-2 mt-0.5">
-          <Text className="font-inter-semibold text-xs text-bolt-blue">
+        <View className="flex-row items-center gap-1.5 mt-0.5">
+          <Text numberOfLines={1} className="font-inter-semibold text-xs text-bolt-blue shrink-0">
             {formatReceiptNo(receipt)}
           </Text>
           <Text className="text-bolt-slate text-xs">·</Text>
-          <Text className="font-inter text-xs text-bolt-slate">
+          <Text numberOfLines={1} className="font-inter text-xs text-bolt-slate shrink-0">
             {receipt.date}
           </Text>
           {receipt.paymentMethod && (
-            <View className="bg-bolt-light rounded px-1.5 py-0.5">
-              <Text className="text-bolt-blue text-2xs font-inter-semibold">
+            <View className="bg-bolt-light rounded px-1.5 py-0.5 shrink-0">
+              <Text numberOfLines={1} className="text-bolt-blue text-2xs font-inter-semibold">
                 {receipt.paymentMethod}
               </Text>
             </View>
@@ -62,8 +62,13 @@ export default function ReceiptRow({ receipt, isLast = false, onPress }: Receipt
         </View>
       </View>
 
-      <View className="items-end shrink-0">
-        <Text className="font-poppins-bold text-bolt-graphite text-sm">
+      <View className="items-end shrink-0 pl-2">
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
+          className="font-poppins-bold text-bolt-graphite text-sm"
+        >
           {formatCurrency(receipt.total)}
         </Text>
         <View className="flex-row items-center gap-0.5 mt-0.5">

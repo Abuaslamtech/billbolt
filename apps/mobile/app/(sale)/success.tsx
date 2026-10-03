@@ -6,12 +6,13 @@ import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02I
 import Invoice02Icon from '@hugeicons/core-free-icons/Invoice02Icon';
 import Add01Icon from '@hugeicons/core-free-icons/Add01Icon';
 import Home01Icon from '@hugeicons/core-free-icons/Home01Icon';
+import Animated, { ZoomIn } from "react-native-reanimated";
+
 import ReceiptDetailModal from "@/components/Receipts/ReceiptDetailModal";
 import ScreenHeader from "@/components/Elements/ScreenHeader";
 import { Colors } from "@/lib/colors";
 import { formatCurrency } from "@/store/saleStore";
 import { useSaleSuccess } from "@/hooks/useSaleSuccess";
-import { router } from "expo-router";
 import { Shadows } from "@/lib/styles";
 
 export default function SaleSuccessScreen() {
@@ -36,8 +37,7 @@ export default function SaleSuccessScreen() {
         <ScreenHeader
           title="Sale Complete"
           subtitle="Transaction finalized"
-          showBack={true}
-          onBack={() => router.push("/(sale)")}
+          showBack={false}
           showHome={true}
           onHome={handleDone}
         />
@@ -45,9 +45,12 @@ export default function SaleSuccessScreen() {
         {/* ── Center Content: Hero Celebration & Transaction Card ─────────── */}
         <View className="flex-1 px-6 justify-center items-center">
           {/* Hero Checkmark */}
-          <View className="w-20 h-20 rounded-full bg-bolt-success-bg border-4 border-bolt-success-border items-center justify-center mb-3">
+          <Animated.View
+            entering={ZoomIn.duration(350).springify()}
+            className="w-20 h-20 rounded-full bg-bolt-success-bg border-4 border-bolt-success-border items-center justify-center mb-3"
+          >
             <HugeiconsIcon icon={CheckmarkCircle02Icon} size={44} color={Colors.mint} />
-          </View>
+          </Animated.View>
 
           {/* Formatted Total */}
           <Text className="font-poppins-bold text-3xl text-bolt-graphite mb-1">
@@ -101,29 +104,29 @@ export default function SaleSuccessScreen() {
         {/* ── Bottom Action Row: Single Horizontal Row with 2 Buttons ──────── */}
         <View className="px-6 pb-6 pt-2">
           <View className="flex-row gap-3">
-            {/* Secondary Action: Start New Sale */}
-            <TouchableOpacity
-              onPress={handleRecordAnother}
-              className="flex-1 py-4 rounded-2xl bg-bolt-card border border-bolt-border items-center justify-center flex-row gap-2 active:bg-bolt-divider"
-              accessibilityRole="button"
-              accessibilityLabel="Start a new sale"
-            >
-              <HugeiconsIcon icon={Add01Icon} size={16} color={Colors.graphite} />
-              <Text className="font-inter-semibold text-bolt-graphite text-sm">
-                New Sale
-              </Text>
-            </TouchableOpacity>
-
-            {/* Primary Hero CTA: View Receipt */}
+            {/* Secondary Action: View Receipt */}
             <TouchableOpacity
               onPress={() => setShowReceiptDetail(true)}
-              className="flex-1 py-4 rounded-2xl bg-bolt-blue items-center justify-center flex-row gap-2 shadow-sm active:bg-bolt-primary-dark"
+              className="flex-1 py-4 rounded-2xl bg-bolt-card border border-bolt-border items-center justify-center flex-row gap-2 active:bg-bolt-divider"
               accessibilityRole="button"
               accessibilityLabel="View full receipt details"
             >
-              <HugeiconsIcon icon={Invoice02Icon} size={17} color={Colors.card} />
-              <Text className="font-poppins-semibold text-bolt-card text-sm">
+              <HugeiconsIcon icon={Invoice02Icon} size={17} color={Colors.graphite} />
+              <Text className="font-inter-semibold text-bolt-graphite text-sm">
                 View Receipt
+              </Text>
+            </TouchableOpacity>
+
+            {/* Primary Hero CTA: Start New Sale */}
+            <TouchableOpacity
+              onPress={handleRecordAnother}
+              className="flex-1 py-4 rounded-2xl bg-bolt-blue items-center justify-center flex-row gap-2 shadow-sm active:bg-bolt-primary-dark"
+              accessibilityRole="button"
+              accessibilityLabel="Start a new sale"
+            >
+              <HugeiconsIcon icon={Add01Icon} size={16} color={Colors.card} />
+              <Text className="font-poppins-semibold text-bolt-card text-sm">
+                New Sale
               </Text>
             </TouchableOpacity>
           </View>

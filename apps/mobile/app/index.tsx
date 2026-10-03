@@ -6,6 +6,7 @@ import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import logo from "@/assets/images/icon.png";
 import atlabxLogo from "@/assets/images/atlabx.png";
 import AppLockOverlay from "@/components/Elements/AppLockOverlay";
+import BrandLogo from "@/components/Elements/BrandLogo";
 import { useBootScreen } from "@/hooks/useBootScreen";
 import { Shadows } from "@/lib/styles";
 
@@ -37,33 +38,16 @@ export default function Index() {
       {/* Top spacer for optical balance */}
       <View className="h-6" />
 
-      {/* Center Branding Hero */}
+      {/* Center Branding Hero — Official Inkscape Unified Vector Wordmark */}
       <View className="items-center">
         <Animated.View entering={FadeIn.duration(500).springify()}>
-          <View
-            className="w-24 h-24 rounded-3xl overflow-hidden shadow-md"
-            style={Shadows.heroButton}
-          >
-            <Image
-              source={logo}
-              className="w-full h-full"
-              contentFit="contain"
-            />
-          </View>
+          <BrandLogo size={56} variant="wordmark" />
         </Animated.View>
-
-        {/* App name */}
-        <Animated.Text
-          entering={FadeInDown.delay(180).duration(400).springify()}
-          className="text-bolt-blue font-poppins-bold text-3xl mt-4 tracking-wide"
-        >
-          Billbolt
-        </Animated.Text>
 
         {/* Tagline */}
         <Animated.Text
           entering={FadeInDown.delay(300).duration(400)}
-          className="text-bolt-slate font-inter-medium text-xs mt-1"
+          className="text-bolt-slate font-inter-semibold text-xs mt-5 tracking-[0.22em] uppercase"
         >
           Smart business made simple
         </Animated.Text>

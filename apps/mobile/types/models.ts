@@ -22,7 +22,7 @@ export interface ProductWithStock extends Product {
 export interface Sale {
   id: string;
   date: string;
-  cycle: string; // YYYY-MM-DD cycle start marker (e.g. 14th of month)
+  cycle: string; // YYYY-MM-DD_YYYY-MM-DD cycle range marker (e.g. 2026-07-14_2026-08-13)
   productId: string;
   productName: string;
   qty: number;
@@ -60,24 +60,58 @@ export interface ReceiptItem {
   total: number;
 }
 
+export type PaymentStatus = 'paid' | 'unpaid' | 'partially_paid';
+
+export interface DebtRepayment {
+  id: string;
+  receiptId?: string;
+  customerPhone: string;
+  customerName: string;
+  amount: number;
+  paymentMethod: 'Cash' | 'Transfer' | 'Card' | 'Credit' | 'Other';
+  date: string;
+  note?: string;
+  createdAt: string;
+}
+
+export interface DebtorCustomerSummary {
+  customerName: string;
+  customerPhone: string;
+  totalOwed: number;
+  totalPaid: number;
+  remainingBalance: number;
+  receiptCount: number;
+  latestReceiptDate: string;
+  earliestDueDate?: string;
+  isOverdue: boolean;
+  receipts: Receipt[];
+}
+
 export interface Receipt {
   id: string;
   receiptNumber?: string;
   date: string;
+  cycle?: string;
   customerName: string;
   customerPhone?: string;
   items: ReceiptItem[];
   subtotal: number;
   discount?: number;
   total: number;
-  paymentMethod?: 'Cash' | 'Transfer' | 'Card' | 'Other';
+  paymentMethod?: 'Cash' | 'Transfer' | 'Card' | 'Credit' | 'Other';
+  paymentStatus?: PaymentStatus;
+  amountPaid?: number;
+  balanceOwed?: number;
+  depositAmount?: number;
+  dueDate?: string;
+  repayments?: DebtRepayment[];
   soldBy?: string;
   notes?: string;
   createdAt: string;
 }
 
 export interface CycleSummary {
-  cycle: string; // YYYY-MM-DD
+  cycle: string; // YYYY-MM-DD_YYYY-MM-DD
   label: string; // e.g. "14 Jul 2026 - 13 Aug 2026"
   revenue: number;
   cost: number;
@@ -114,12 +148,20 @@ export interface DashboardMetrics {
   yesterdaySales?: number;
   todaySalesGrowth: number; // percentage vs yesterday
   thisMonthRevenue: number;
-  thisMonthProfit: number;
-  thisMonthGrowth: number; // percentage vs last cycle
+  thisMonthProfit?: number;
+  thisMonthGrowth?: number; // percentage vs last cycle
   totalReceiptsCount: number;
   totalCustomersCount: number;
-  productsTracked: number;
+  productsTracked?: number;
   needReorderCount: number;
   outOfStockCount: number;
-  currentCycleLabel: string;
+  todayCash?: number;
+  todayTransfer?: number;
+  todayCard?: number;
+  totalDebtorsCount?: number;
+  totalOutstandingDebt?: number;
+  overdueDebtorsCount?: number;
+  currentCycle?: string;
+  currentCycleLabel?: string;
 }
+

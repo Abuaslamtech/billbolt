@@ -31,7 +31,7 @@ export function AuthFooter({
       {/* Divider */}
       <View className="w-full flex-row items-center my-4">
         <View className="flex-1 h-px bg-bolt-border" />
-        <Text className="mx-4 text-bolt-slate font-inter-medium">OR</Text>
+        <Text className="mx-4 text-bolt-slate font-inter-semibold text-xs tracking-wider">OR</Text>
         <View className="flex-1 h-px bg-bolt-border" />
       </View>
 
@@ -42,17 +42,17 @@ export function AuthFooter({
         disabled={disabled}
       >
         <Image source={google} contentFit="contain" className="w-8 h-8" />
-        <Text className="text-bolt-graphite font-semibold font-inter-medium">
+        <Text className="text-bolt-graphite font-inter-semibold text-sm">
           {label}
         </Text>
       </TouchableOpacity>
 
-      {/* Login Link */}
-      <View className="w-full flex items-center mt-4">
-        <Text className="text-bolt-slate font-inter-medium">
+      {/* Switch Page Link */}
+      <View className="w-full flex items-center mt-5 py-2">
+        <Text className="text-bolt-slate font-inter text-sm">
           {switchPage}
           <Text
-            className="font-inter-medium text-bolt-blue font-semibold"
+            className="font-inter-semibold text-bolt-blue text-sm"
             onPress={handleRoute}
           >
             {action}

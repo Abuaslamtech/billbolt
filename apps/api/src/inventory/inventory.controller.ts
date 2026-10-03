@@ -5,12 +5,14 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { JwtPayload } from 'src/auth/strategies/jwt.strategy';
 import { PrismaService } from 'prisma/prisma.service';
+import { resolveBusinessId } from 'src/common/utils/business.utils';
 import {
   CreateProductDto,
   CreateRestockDto,
@@ -26,20 +28,12 @@ export class InventoryController {
     private readonly prisma: PrismaService,
   ) {}
 
-  private async resolveBusinessId(user: JwtPayload): Promise<string> {
-    if (user.businessId) return user.businessId;
-    const b = await this.prisma.business.findUnique({
-      where: { ownerId: user.sub },
-    });
-    return b?.id ?? '';
-  }
-
   // ─── Products ────────────────────────────────────────────────────────────────
 
   /** All products with computed stock levels for the authenticated business */
   @Get('products')
   async getProductsWithStock(@GetUser() user: JwtPayload) {
-    const businessId = await this.resolveBusinessId(user);
+    const businessId = await resolveBusinessId(this.prisma, user);
     return this.inventoryService.getProductsWithStock(businessId);
   }
 
@@ -49,7 +43,7 @@ export class InventoryController {
     @GetUser() user: JwtPayload,
     @Body() dto: CreateProductDto,
   ) {
-    const businessId = await this.resolveBusinessId(user);
+    const businessId = await resolveBusinessId(this.prisma, user);
     return this.inventoryService.createProduct(businessId, dto);
   }
 
@@ -60,7 +54,7 @@ export class InventoryController {
     @Param('id') productId: string,
     @Body() dto: UpdateProductDto,
   ) {
-    const businessId = await this.resolveBusinessId(user);
+    const businessId = await resolveBusinessId(this.prisma, user);
     return this.inventoryService.updateProduct(productId, businessId, dto);
   }
 
@@ -68,9 +62,12 @@ export class InventoryController {
 
   /** All restock records for the authenticated business */
   @Get('restocks')
-  async getRestocks(@GetUser() user: JwtPayload) {
-    const businessId = await this.resolveBusinessId(user);
-    return this.inventoryService.getRestocks(businessId);
+  async getRestocks(
+    @GetUser() user: JwtPayload,
+    @Query('limit') limit = '100',
+  ) {
+    const businessId = await resolveBusinessId(this.prisma, user);
+    return this.inventoryService.getRestocks(businessId, +limit);
   }
 
   /** Log a new restock for a product */
@@ -79,7 +76,7 @@ export class InventoryController {
     @GetUser() user: JwtPayload,
     @Body() dto: CreateRestockDto,
   ) {
-    const businessId = await this.resolveBusinessId(user);
+    const businessId = await resolveBusinessId(this.prisma, user);
     return this.inventoryService.createRestock(businessId, dto);
   }
 }

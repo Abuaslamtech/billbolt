@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useCallback } from "react";
+import { BackHandler } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
 import Toast from "react-native-toast-message";
@@ -21,6 +22,8 @@ export function useSaleCatalog() {
   const setIsDiscardDialogOpen = useSaleStore((s) => s.setIsDiscardDialogOpen);
   const quantityPickerTarget = useSaleStore((s) => s.quantityPickerTarget);
   const setQuantityPickerTarget = useSaleStore((s) => s.setQuantityPickerTarget);
+  const restockPromptProduct = useSaleStore((s) => s.restockPromptProduct);
+  const setRestockPromptProduct = useSaleStore((s) => s.setRestockPromptProduct);
 
   const addToCart = useSaleStore((s) => s.addToCart);
   const updateQty = useSaleStore((s) => s.updateQty);
@@ -28,6 +31,9 @@ export function useSaleCatalog() {
   const clearCart = useSaleStore((s) => s.clearCart);
   const getCartSubtotal = useSaleStore((s) => s.getCartSubtotal);
   const getTotalItemsCount = useSaleStore((s) => s.getTotalItemsCount);
+
+  // Top frequent products selected from pre-indexed store velocity ranking
+  const frequentProducts = useAppDataStore((s) => s.frequentProducts);
 
   // Auto-add product when scanned from an external screen (e.g. Dashboard)
   useEffect(() => {
@@ -90,6 +96,39 @@ export function useSaleCatalog() {
     router.back();
   }, [clearCart, setIsDiscardDialogOpen]);
 
+  // Hardware Back Button Intercept: dismiss modals or prompt discard confirmation if cart is not empty
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (isScannerOpen) {
+        setIsScannerOpen(false);
+        return true;
+      }
+      if (quantityPickerTarget) {
+        setQuantityPickerTarget(null);
+        return true;
+      }
+      if (isDiscardDialogOpen) {
+        setIsDiscardDialogOpen(false);
+        return true;
+      }
+      if (cart.length > 0) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setIsDiscardDialogOpen(true);
+        return true;
+      }
+      return false;
+    });
+    return () => subscription.remove();
+  }, [
+    isScannerOpen,
+    quantityPickerTarget,
+    isDiscardDialogOpen,
+    cart.length,
+    setIsScannerOpen,
+    setQuantityPickerTarget,
+    setIsDiscardDialogOpen,
+  ]);
+
   const handleReviewSale = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push("/(sale)/checkout");
@@ -150,6 +189,7 @@ export function useSaleCatalog() {
     setSelectedCategory,
     categories,
     filteredProducts,
+    frequentProducts,
     totalItemsCount,
     cartSubtotal,
     isScannerOpen,
@@ -158,6 +198,8 @@ export function useSaleCatalog() {
     setIsDiscardDialogOpen,
     quantityPickerTarget,
     setQuantityPickerTarget,
+    restockPromptProduct,
+    setRestockPromptProduct,
     addToCart,
     updateQty,
     setDirectQty,

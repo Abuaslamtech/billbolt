@@ -36,7 +36,22 @@ export class BusinessController {
 
   /** Upload or update business logo */
   @Post('logo')
-  @UseInterceptors(FileInterceptor('logo'))
+  @UseInterceptors(
+    FileInterceptor('logo', {
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+      fileFilter: (_req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+          return cb(
+            new BadRequestException(
+              'Only JPG, PNG, and WebP image files are allowed',
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
   uploadLogo(
     @UploadedFile() logo: Express.Multer.File,
     @GetUser() user: JwtPayload,
@@ -63,12 +78,12 @@ export class BusinessController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.businessService.findOne(id);
+  findOne(@Param('id') id: string, @GetUser() user: JwtPayload) {
+    return this.businessService.findOne(id, user.sub);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.businessService.remove(id);
+  remove(@Param('id') id: string, @GetUser() user: JwtPayload) {
+    return this.businessService.remove(id, user.sub);
   }
 }

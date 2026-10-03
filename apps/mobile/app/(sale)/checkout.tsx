@@ -1,25 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import Add01Icon from '@hugeicons/core-free-icons/Add01Icon';
 import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
+import Delete02Icon from '@hugeicons/core-free-icons/Delete02Icon';
 import FlashIcon from '@hugeicons/core-free-icons/FlashIcon';
 import Calendar03Icon from '@hugeicons/core-free-icons/Calendar03Icon';
 import Tag01Icon from '@hugeicons/core-free-icons/Tag01Icon';
 import UserIcon from '@hugeicons/core-free-icons/UserIcon';
-import ChevronDownIcon from '@hugeicons/core-free-icons/ChevronDownIcon';
-import ChevronUpIcon from '@hugeicons/core-free-icons/ChevronUpIcon';
-import BackButton from "@/components/Elements/BackButton";
-import ConfirmDialog from "@/components/Elements/ConfirmDialog";
-import QuantityPickerModal from "@/components/Elements/QuantityPickerModal";
+import { BackButton } from "@/components/Elements/BackButton";
+import { ConfirmDialog } from "@/components/Elements/ConfirmDialog";
+import { QuantityPickerModal } from "@/components/Elements/QuantityPickerModal";
+import { LoadingOverlay } from "@/components/Elements/LoadingOverlay";
 import { Colors } from "@/lib/colors";
 import { formatCurrency } from "@/store/saleStore";
 import { useAppDataStore } from "@/store/AppDataStore";
@@ -28,6 +28,7 @@ import { useSaleCheckout } from "@/hooks/useSaleCheckout";
 import { Shadows } from "@/lib/styles";
 
 export default function SaleCheckoutScreen() {
+  const insets = useSafeAreaInsets();
   const currencyCode = useAppDataStore((state) => state.businessInfo?.currency);
   const currency = getCurrencySymbol(currencyCode);
   const {
@@ -51,6 +52,7 @@ export default function SaleCheckoutScreen() {
     quantityPickerTarget,
     setQuantityPickerTarget,
     setDirectQty,
+    removeFromCart,
     totalItemsCount,
     cartSubtotal,
     discountAmount,
@@ -66,11 +68,44 @@ export default function SaleCheckoutScreen() {
     handleSelectDiscountPreset,
     handleToggleHistorical,
     handleSelectDatePreset,
+    depositAmount,
+    setDepositAmount,
+    dueDate,
+    setDueDate,
   } = useSaleCheckout();
 
-  // Customer info is optional and collapsed by default to avoid screen clutter
+  // Customer info is mandatory for credit, optional for others
+  const isCredit = paymentMethod === "Credit";
   const [isCustomerOpen, setIsCustomerOpen] = useState(
-    Boolean(customerName || customerPhone)
+    Boolean(customerName || customerPhone || isCredit)
+  );
+
+  const parsedDeposit = parseFloat(depositAmount) || 0;
+  const balanceOwed = isCredit ? Math.max(0, cartTotal - parsedDeposit) : 0;
+
+  const dueDatePresets = useMemo(() => {
+    const addDays = (d: number) => {
+      const dt = new Date();
+      dt.setDate(dt.getDate() + d);
+      return dt.toISOString().slice(0, 10);
+    };
+    const endOfMonth = () => {
+      const dt = new Date();
+      dt.setMonth(dt.getMonth() + 1, 0);
+      return dt.toISOString().slice(0, 10);
+    };
+
+    return [
+      { id: "3d", label: "In 3 days", value: addDays(3) },
+      { id: "7d", label: "1 week", value: addDays(7) },
+      { id: "14d", label: "2 weeks", value: addDays(14) },
+      { id: "end_of_month", label: "End of month", value: endOfMonth() },
+      { id: "custom", label: "Custom Date", value: "custom" },
+    ];
+  }, []);
+
+  const [isCustomDueDate, setIsCustomDueDate] = useState(() =>
+    Boolean(dueDate && !dueDatePresets.some((p) => p.value !== "custom" && p.value === dueDate))
   );
 
   return (
@@ -112,7 +147,7 @@ export default function SaleCheckoutScreen() {
           keyboardDismissMode="on-drag"
           className="flex-1"
           enableOnAndroid={true}
-          extraScrollHeight={20}
+          extraScrollHeight={84}
           contentContainerStyle={{
             paddingHorizontal: 16,
             paddingTop: 12,
@@ -121,12 +156,17 @@ export default function SaleCheckoutScreen() {
         >
             {/* ── SECTION 1: Payment Method (The #1 Checkout Decision) ──────── */}
             <View className="bg-bolt-card rounded-2xl border border-bolt-border p-4 mb-3.5">
-              <Text className="font-poppins-semibold text-xs text-bolt-graphite uppercase tracking-wider mb-2.5">
-                Select Payment Method
-              </Text>
+              <View className="flex-row justify-between items-center mb-2.5">
+                <Text className="font-poppins-semibold text-xs text-bolt-graphite uppercase tracking-wider">
+                  Select Payment Method
+                </Text>
+                <Text className="font-inter text-2xs text-bolt-slate">
+                  Transfer selected by default
+                </Text>
+              </View>
 
               <View className="flex-row gap-2">
-                {(["Transfer", "Cash", "Card"] as const).map((method) => {
+                {(["Transfer", "Cash", "Card", "Credit"] as const).map((method) => {
                   const isSelected = paymentMethod === method;
                   return (
                     <TouchableOpacity
@@ -140,7 +180,7 @@ export default function SaleCheckoutScreen() {
                       accessibilityLabel={`Select ${method} payment`}
                     >
                       <Text
-                        className={`text-sm ${isSelected
+                        className={`text-xs ${isSelected
                           ? "font-poppins-bold text-bolt-blue"
                           : "font-inter-semibold text-bolt-graphite"
                           }`}
@@ -206,6 +246,16 @@ export default function SaleCheckoutScreen() {
                   <Text className="font-poppins-semibold text-sm text-bolt-graphite min-w-[64px] text-right">
                     {formatCurrency(item.unitPrice * item.qty)}
                   </Text>
+
+                  <TouchableOpacity
+                    onPress={() => removeFromCart(item.productId)}
+                    className="p-1 ml-2.5 rounded-lg active:bg-bolt-divider"
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${item.productName} from sale`}
+                  >
+                    <HugeiconsIcon icon={Delete02Icon} size={15} color={Colors.danger.text} />
+                  </TouchableOpacity>
                 </View>
               ))}
 
@@ -274,7 +324,7 @@ export default function SaleCheckoutScreen() {
 
                 {/* Expanded Discount Editor */}
                 {isDiscountOpen && (
-                  <View className="mt-3 pt-3 border-t border-bolt-divider gap-2.5 bg-bolt-surface p-3 rounded-xl border border-bolt-border">
+                  <View className="mt-3 pt-3 border-t border-bolt-divider gap-2.5 bg-bolt-surface p-3 rounded-xl border">
                     {/* Fixed / Percent Tabs */}
                     <View className="flex-row gap-2">
                       {(["fixed", "percent"] as const).map((type) => {
@@ -468,39 +518,51 @@ export default function SaleCheckoutScreen() {
                     <Text className="font-inter text-2xs text-bolt-slate">
                       {customerName || customerPhone
                         ? customerName || customerPhone
+                        : isCredit
+                        ? "Required for credit sale"
                         : "Optional · Walk-in customer"}
                     </Text>
                   </View>
                 </View>
 
-                <TouchableOpacity
-                  onPress={() => setIsCustomerOpen(!isCustomerOpen)}
-                  className="bg-bolt-surface border border-bolt-border px-3 py-1.5 rounded-xl active:bg-bolt-divider"
-                  accessibilityRole="button"
-                  accessibilityLabel="Toggle customer details"
-                >
-                  <Text className="font-inter-semibold text-xs text-bolt-blue">
-                    {isCustomerOpen
-                      ? "Done"
-                      : customerName || customerPhone
-                        ? "Edit"
-                        : "+ Add"}
-                  </Text>
-                </TouchableOpacity>
+                {!isCredit && (
+                  <TouchableOpacity
+                    onPress={() => setIsCustomerOpen(!isCustomerOpen)}
+                    className="bg-bolt-surface border border-bolt-border px-3 py-1.5 rounded-xl active:bg-bolt-divider"
+                    accessibilityRole="button"
+                    accessibilityLabel="Toggle customer details"
+                  >
+                    <Text className="font-inter-semibold text-xs text-bolt-blue">
+                      {isCustomerOpen
+                        ? "Done"
+                        : customerName || customerPhone
+                          ? "Edit"
+                          : "+ Add"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
-              {/* Full-width, comfortable inputs when opened */}
-              {isCustomerOpen && (
-                <View className="mt-3 pt-3 border-t border-bolt-divider gap-2.5">
+              {/* Full-width inputs when opened or when Credit is selected */}
+              {(isCustomerOpen || isCredit) && (
+                <View className="mt-3 pt-3 border-t border-bolt-divider gap-3">
+                  {isCredit && (
+                    <View className="bg-bolt-warning-bg border border-bolt-warning-border rounded-xl p-2.5">
+                      <Text className="font-inter-medium text-xs text-bolt-warning-text leading-snug">
+                        Customer details are required to record and track debts accurately.
+                      </Text>
+                    </View>
+                  )}
+
                   <View>
                     <Text className="font-inter-medium text-xs text-bolt-slate mb-1">
-                      Customer Name
+                      Customer Name {isCredit && <Text className="text-bolt-danger-text">*</Text>}
                     </Text>
                     <View className="bg-bolt-surface border border-bolt-border rounded-xl px-3.5 h-11 justify-center">
                       <TextInput
                         value={customerName}
                         onChangeText={setCustomerName}
-                        placeholder="e.g. Amaka Okafor"
+                        placeholder="e.g. Alhaji Musa / Mama Ngozi"
                         placeholderTextColor={Colors.slate}
                         className="font-inter text-sm text-bolt-graphite py-0"
                         returnKeyType="next"
@@ -510,7 +572,7 @@ export default function SaleCheckoutScreen() {
 
                   <View>
                     <Text className="font-inter-medium text-xs text-bolt-slate mb-1">
-                      Phone Number
+                      Phone Number {isCredit && <Text className="text-bolt-slate text-2xs">(for WhatsApp reminder)</Text>}
                     </Text>
                     <View className="bg-bolt-surface border border-bolt-border rounded-xl px-3.5 h-11 justify-center">
                       <TextInput
@@ -523,6 +585,152 @@ export default function SaleCheckoutScreen() {
                       />
                     </View>
                   </View>
+
+                  {/* ── Credit Terms: Deposit & Promised Due Date ── */}
+                  {isCredit && (
+                    <View className="mt-1 pt-3 border-t border-bolt-divider gap-3">
+                      <View>
+                        <View className="flex-row justify-between items-center mb-1">
+                          <Text className="font-inter-medium text-xs text-bolt-slate">
+                            Amount Paid Now (Deposit)
+                          </Text>
+                          <Text className="font-inter text-2xs text-bolt-slate">
+                            Optional · Defaults to ₦0
+                          </Text>
+                        </View>
+                        <View className="bg-bolt-surface border border-bolt-border rounded-xl px-3.5 h-11 justify-center">
+                          <TextInput
+                            value={depositAmount}
+                            onChangeText={setDepositAmount}
+                            placeholder="0"
+                            placeholderTextColor={Colors.slate}
+                            keyboardType="numeric"
+                            className="font-inter text-sm text-bolt-graphite py-0"
+                          />
+                        </View>
+                      </View>
+
+                      {/* Promised Payment Date */}
+                      <View>
+                        <View className="flex-row items-center justify-between mb-1.5">
+                          <Text className="font-inter-medium text-xs text-bolt-slate">
+                            Promised Pay Date (Optional)
+                          </Text>
+                          {dueDate ? (
+                            <TouchableOpacity
+                              onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setDueDate("");
+                                setIsCustomDueDate(false);
+                              }}
+                            >
+                              <Text className="font-inter text-2xs text-bolt-red">Clear</Text>
+                            </TouchableOpacity>
+                          ) : null}
+                        </View>
+                        <View className="flex-row flex-wrap gap-2">
+                          {dueDatePresets.map((preset) => {
+                            const isCustom = preset.id === "custom";
+                            const isSelected = isCustom
+                              ? isCustomDueDate
+                              : !isCustomDueDate && dueDate === preset.value;
+
+                            const label =
+                              isCustom && isCustomDueDate && dueDate
+                                ? `Custom: ${dueDate}`
+                                : preset.label;
+
+                            return (
+                              <TouchableOpacity
+                                key={preset.id}
+                                onPress={() => {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  if (isCustom) {
+                                    if (isCustomDueDate) {
+                                      setIsCustomDueDate(false);
+                                      setDueDate("");
+                                    } else {
+                                      setIsCustomDueDate(true);
+                                    }
+                                  } else {
+                                    setIsCustomDueDate(false);
+                                    setDueDate(isSelected ? "" : preset.value);
+                                  }
+                                }}
+                                className={`px-2.5 py-1.5 rounded-lg border ${
+                                  isSelected
+                                    ? "bg-bolt-light border-bolt-blue"
+                                    : "bg-bolt-surface border-bolt-border active:bg-bolt-divider"
+                                }`}
+                              >
+                                <Text
+                                  className={`text-xs ${
+                                    isSelected
+                                      ? "font-inter-semibold text-bolt-blue"
+                                      : "font-inter text-bolt-graphite"
+                                  }`}
+                                >
+                                  {label}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+
+                        {/* Custom Due Date Input */}
+                        {isCustomDueDate && (
+                          <View className="mt-2">
+                            <Text className="font-inter text-2xs text-bolt-slate mb-1">
+                              Enter due date (YYYY-MM-DD):
+                            </Text>
+                            <View className="flex-row items-center bg-bolt-surface border border-bolt-border rounded-xl px-3.5 h-11">
+                              <TextInput
+                                value={dueDate}
+                                onChangeText={setDueDate}
+                                placeholder="e.g. 2026-10-25"
+                                placeholderTextColor={Colors.slate}
+                                className="flex-1 font-inter text-sm text-bolt-graphite py-0"
+                                keyboardType="numbers-and-punctuation"
+                                autoFocus
+                              />
+                              {dueDate ? (
+                                <TouchableOpacity
+                                  onPress={() => setDueDate("")}
+                                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                >
+                                  <HugeiconsIcon icon={Cancel01Icon} size={15} color={Colors.slate} />
+                                </TouchableOpacity>
+                              ) : null}
+                            </View>
+                          </View>
+                        )}
+                      </View>
+
+                      {/* Dynamic Debt Calculation Breakdown */}
+                      <View className="bg-bolt-surface rounded-xl border border-bolt-border p-3 gap-1.5">
+                        <View className="flex-row justify-between">
+                          <Text className="font-inter text-xs text-bolt-slate">Total Bill:</Text>
+                          <Text className="font-inter-semibold text-xs text-bolt-graphite">
+                            {formatCurrency(cartTotal)}
+                          </Text>
+                        </View>
+                        {parsedDeposit > 0 && (
+                          <View className="flex-row justify-between">
+                            <Text className="font-inter text-xs text-bolt-success-text">Deposit Paid Now:</Text>
+                            <Text className="font-inter-semibold text-xs text-bolt-success-text">
+                              - {formatCurrency(parsedDeposit)}
+                            </Text>
+                          </View>
+                        )}
+                        <View className="flex-row justify-between pt-1 border-t border-bolt-divider">
+                          <Text className="font-inter-bold text-xs text-bolt-danger-text">Remaining Debt Owed:</Text>
+                          <Text className="font-poppins-bold text-sm text-bolt-danger-text">
+                            {formatCurrency(balanceOwed)}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  )}
                 </View>
               )}
             </View>
@@ -530,15 +738,20 @@ export default function SaleCheckoutScreen() {
 
           {/* ── Sticky Bottom Checkout Bar ──────────────────────────────────── */}
           <View
-            className="px-5 py-3.5 bg-bolt-card border-t border-bolt-divider shadow-lg flex-row items-center justify-between"
-            style={Shadows.header}
+            className="px-5 pt-3.5 bg-bolt-card border-t border-bolt-divider shadow-lg flex-row items-center justify-between gap-3"
+            style={[Shadows.header, { paddingBottom: Math.max(insets.bottom, 14) }]}
           >
-            <View>
-              <Text className="font-inter-medium text-xs text-bolt-slate">
-                Total Due
+            <View className="flex-1 min-w-0 pr-2">
+              <Text numberOfLines={1} className="font-inter-medium text-xs text-bolt-slate">
+                {isCredit ? "Balance Owed" : "Total Due"}
               </Text>
-              <Text className="font-poppins-bold text-2xl text-bolt-graphite">
-                {formatCurrency(cartTotal)}
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+                className={`font-poppins-bold text-2xl ${isCredit ? "text-bolt-danger-text" : "text-bolt-graphite"}`}
+              >
+                {formatCurrency(isCredit ? balanceOwed : cartTotal)}
               </Text>
             </View>
 
@@ -546,16 +759,23 @@ export default function SaleCheckoutScreen() {
             <TouchableOpacity
               onPress={handleConfirmSale}
               disabled={isSubmitting || cart.length === 0}
-              className={`px-6 py-4 rounded-2xl flex-row items-center gap-2 shadow-sm ${cart.length > 0 && !isSubmitting
-                ? "bg-bolt-blue active:bg-bolt-primary-dark"
+              className={`px-5 py-3.5 rounded-2xl flex-row items-center gap-2 shadow-sm shrink-0 ${cart.length > 0 && !isSubmitting
+                ? isCredit ? "bg-bolt-blue active:bg-bolt-primary-dark" : "bg-bolt-blue active:bg-bolt-primary-dark"
                 : "bg-bolt-disabled"
                 }`}
               accessibilityRole="button"
               accessibilityLabel={`Confirm and record sale for ${formatCurrency(cartTotal)}`}
             >
               <HugeiconsIcon icon={FlashIcon} size={18} color={Colors.card} />
-              <Text className="font-poppins-semibold text-bolt-card text-sm">
-                {isSubmitting ? "Recording..." : "Confirm Sale"}
+              <Text
+                numberOfLines={1}
+                className="font-poppins-semibold text-bolt-card text-sm"
+              >
+                {isSubmitting
+                  ? "Recording..."
+                  : isCredit
+                    ? `Record Credit Sale • ${formatCurrency(cartTotal)}`
+                    : `Confirm • ${formatCurrency(cartTotal)}`}
               </Text>
             </TouchableOpacity>
           </View>
@@ -585,6 +805,13 @@ export default function SaleCheckoutScreen() {
             setDirectQty(quantityPickerTarget.productId, newQty);
           }
         }}
+      />
+
+      {/* Screen-locking loader during transaction commit */}
+      <LoadingOverlay
+        visible={isSubmitting}
+        message="Recording Sale..."
+        submessage="Generating receipt and updating stock"
       />
       </View>
     </SafeAreaView >

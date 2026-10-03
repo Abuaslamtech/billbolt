@@ -35,7 +35,7 @@ export default function ScreenHeader({
     if (onHome) {
       onHome();
     } else {
-      router.push('/(main)');
+      router.navigate('/(main)');
     }
   };
 

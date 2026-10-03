@@ -6,7 +6,7 @@ import { countTodayReceipts } from "@/services/storage/cycleUtils";
 import { useAppLockPrimer } from "./useAppLockPrimer";
 
 export function useDashboardScreen() {
-  const { metrics, receipts, refresh } = useAppDataStore();
+  const { metrics, receipts, refresh, isLoading, isInitialized } = useAppDataStore();
   const { isOnline, pendingCount } = useSyncStore();
 
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -55,6 +55,7 @@ export function useDashboardScreen() {
     // Pull to refresh
     refreshing,
     handleRefresh,
+    isInitialLoading: !isInitialized || (isLoading && !metrics),
     // Computed numbers
     todaySales,
     yesterdaySales,

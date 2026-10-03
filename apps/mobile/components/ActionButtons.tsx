@@ -32,7 +32,7 @@ export default function ActionButtons({
       {/* Secondary Row — Inventory Operations (Add New Item + Restock Items) */}
       <View className="flex-row gap-2.5">
         <TouchableOpacity
-          className="flex-1 flex-row items-center justify-center gap-2 bg-bolt-card border border-bolt-border rounded-xl h-14"
+          className="flex-1 flex-row items-center justify-center gap-2 bg-bolt-card border border-bolt-border rounded-xl min-h-[56px] py-3 px-2"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onAddProduct();
@@ -43,13 +43,18 @@ export default function ActionButtons({
           style={Shadows.card}
         >
           <HugeiconsIcon icon={PackageAdd01Icon} size={16} color={Colors.primary} />
-          <Text className="text-bolt-graphite text-xs font-inter-semibold">
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+            className="text-bolt-graphite text-xs font-inter-semibold text-center"
+          >
             Add New Product
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          className="flex-1 flex-row items-center justify-center gap-2 bg-bolt-card border border-bolt-border rounded-xl h-14"
+          className="flex-1 flex-row items-center justify-center gap-2 bg-bolt-card border border-bolt-border rounded-xl min-h-[56px] py-3 px-2"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onRestock();
@@ -60,7 +65,12 @@ export default function ActionButtons({
           style={Shadows.card}
         >
           <HugeiconsIcon icon={PackageReceiveIcon} size={16} color={Colors.primary} />
-          <Text className="text-bolt-graphite text-xs font-inter-semibold">
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+            className="text-bolt-graphite text-xs font-inter-semibold text-center"
+          >
             Restock Items
           </Text>
         </TouchableOpacity>

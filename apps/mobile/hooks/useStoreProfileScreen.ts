@@ -104,6 +104,7 @@ export function useStoreProfileScreen() {
   };
 
   const handleSave = async () => {
+    if (isSaving) return;
     if (!name.trim()) {
       Toast.show({
         type: "error",

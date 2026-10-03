@@ -23,11 +23,10 @@ export default function LinkModal({
   return (
     <Modal
       animationType="slide"
-      backdropColor={"#E6F0FF"}
       transparent={false}
       visible={visible}
       onRequestClose={() => {
-        handleLinking;
+        handleLinking({} as any);
       }}
     >
       <View className="flex-1 justify-center items-center ">
@@ -53,7 +52,8 @@ export default function LinkModal({
               label={isLinking ? "Linking..." : "Link Account"}
               onPress={handleLinking}
               iconName={"link"}
-              disabled={false}
+              disabled={isLinking}
+              loading={isLinking}
               isChecked={true}
             />
           </View>

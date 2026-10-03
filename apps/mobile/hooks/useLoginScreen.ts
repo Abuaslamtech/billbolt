@@ -32,6 +32,7 @@ export function useLoginScreen() {
   };
 
   const handleSignIn = () => {
+    if (isLoading || isGoogleLoading) return;
     signInWithEmail(email, password);
   };
 

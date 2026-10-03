@@ -3,7 +3,7 @@ import * as Haptics from "expo-haptics";
 import Toast from "react-native-toast-message";
 import { ProductWithStock, Receipt } from "@/types/models";
 import { useAppDataStore } from "@/store/AppDataStore";
-import { getCurrencySymbol } from "@/lib/formatters";
+import { formatYMD } from "@/services/storage/cycleUtils";
 
 export interface CartItem {
   productId: string;
@@ -21,12 +21,7 @@ export interface QuantityPickerTarget {
   unitPrice: number;
 }
 
-export function formatCurrency(n: number | null | undefined): string {
-  const currencyCode = useAppDataStore.getState().businessInfo?.currency;
-  const currencySymbol = getCurrencySymbol(currencyCode);
-  if (n == null || isNaN(Number(n))) return `${currencySymbol}0`;
-  return `${currencySymbol}${Number(n).toLocaleString("en-NG")}`;
-}
+export { formatCurrency } from "@/lib/formatters";
 
 interface SaleState {
   // Cart & Catalog
@@ -34,11 +29,13 @@ interface SaleState {
   searchQuery: string;
   selectedCategory: string;
 
-  // Customer & Payment
+  // Payment & Customer
   customerName: string;
   customerPhone: string;
   soldBy?: string;
-  paymentMethod: "Cash" | "Transfer" | "Card";
+  paymentMethod: "Cash" | "Transfer" | "Card" | "Credit";
+  depositAmount: string;
+  dueDate: string;
   isSubmitting: boolean;
 
   // Discount
@@ -60,13 +57,16 @@ interface SaleState {
   isClearCartDialogOpen: boolean;
   isScannerOpen: boolean;
   quantityPickerTarget: QuantityPickerTarget | null;
+  restockPromptProduct: ProductWithStock | null;
 
   // Actions
   setSearchQuery: (query: string) => void;
   setSelectedCategory: (cat: string) => void;
   setCustomerName: (name: string) => void;
   setCustomerPhone: (phone: string) => void;
-  setPaymentMethod: (method: "Cash" | "Transfer" | "Card") => void;
+  setPaymentMethod: (method: "Cash" | "Transfer" | "Card" | "Credit") => void;
+  setDepositAmount: (amount: string) => void;
+  setDueDate: (date: string) => void;
   setIsDiscountOpen: (open: boolean) => void;
   setDiscountType: (type: "fixed" | "percent") => void;
   setDiscountValue: (val: string) => void;
@@ -78,6 +78,7 @@ interface SaleState {
   setIsDiscardDialogOpen: (open: boolean) => void;
   setIsClearCartDialogOpen: (open: boolean) => void;
   setQuantityPickerTarget: (target: QuantityPickerTarget | null) => void;
+  setRestockPromptProduct: (product: ProductWithStock | null) => void;
 
   // Cart Operations
   addToCart: (product: ProductWithStock) => void;
@@ -105,7 +106,9 @@ export const useSaleStore = create<SaleState>((set, get) => ({
   customerName: "",
   customerPhone: "",
   soldBy: undefined,
-  paymentMethod: "Transfer",
+  paymentMethod: "Cash",
+  depositAmount: "",
+  dueDate: "",
   isSubmitting: false,
 
   isDiscountOpen: false,
@@ -115,7 +118,7 @@ export const useSaleStore = create<SaleState>((set, get) => ({
   isHistoricalOpen: false,
   isHistorical: false,
   datePreset: "today",
-  customDateInput: new Date().toISOString().split("T")[0],
+  customDateInput: formatYMD(),
 
   completedReceipt: null,
 
@@ -123,12 +126,15 @@ export const useSaleStore = create<SaleState>((set, get) => ({
   isClearCartDialogOpen: false,
   isScannerOpen: false,
   quantityPickerTarget: null,
+  restockPromptProduct: null,
 
   setSearchQuery: (searchQuery) => set({ searchQuery }),
   setSelectedCategory: (selectedCategory) => set({ selectedCategory }),
   setCustomerName: (customerName) => set({ customerName }),
   setCustomerPhone: (customerPhone) => set({ customerPhone }),
   setPaymentMethod: (paymentMethod) => set({ paymentMethod }),
+  setDepositAmount: (depositAmount) => set({ depositAmount }),
+  setDueDate: (dueDate) => set({ dueDate }),
   setIsDiscountOpen: (isDiscountOpen) => set({ isDiscountOpen }),
   setDiscountType: (discountType) => set({ discountType }),
   setDiscountValue: (discountValue) => set({ discountValue }),
@@ -140,6 +146,7 @@ export const useSaleStore = create<SaleState>((set, get) => ({
   setIsDiscardDialogOpen: (isDiscardDialogOpen) => set({ isDiscardDialogOpen }),
   setIsClearCartDialogOpen: (isClearCartDialogOpen) => set({ isClearCartDialogOpen }),
   setQuantityPickerTarget: (quantityPickerTarget) => set({ quantityPickerTarget }),
+  setRestockPromptProduct: (restockPromptProduct) => set({ restockPromptProduct }),
 
   addToCart: (product: ProductWithStock) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -147,11 +154,7 @@ export const useSaleStore = create<SaleState>((set, get) => ({
     const isPastEntry = isHistorical || datePreset !== "today";
 
     if (!isPastEntry && product.currentStock <= 0) {
-      Toast.show({
-        type: "error",
-        text1: "Out of stock",
-        text2: `${product.name} has no available stock`,
-      });
+      set({ restockPromptProduct: product });
       return;
     }
 
@@ -247,6 +250,8 @@ export const useSaleStore = create<SaleState>((set, get) => ({
       customerPhone: "",
       soldBy: undefined,
       paymentMethod: "Transfer",
+      depositAmount: "",
+      dueDate: "",
       isSubmitting: false,
       isDiscountOpen: false,
       discountType: "fixed",
@@ -254,7 +259,7 @@ export const useSaleStore = create<SaleState>((set, get) => ({
       isHistoricalOpen: false,
       isHistorical: false,
       datePreset: "today",
-      customDateInput: new Date().toISOString().split("T")[0],
+      customDateInput: formatYMD(),
       completedReceipt: null,
       isDiscardDialogOpen: false,
       isClearCartDialogOpen: false,
@@ -301,24 +306,28 @@ export const useSaleStore = create<SaleState>((set, get) => ({
     try {
       let effectiveDate: string;
       if (state.datePreset === "yesterday") {
-        effectiveDate = new Date(Date.now() - 86400000).toISOString();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        effectiveDate = formatYMD(yesterday);
       } else if (state.datePreset === "custom") {
-        const parsed = new Date(state.customDateInput);
-        effectiveDate = isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+        effectiveDate = state.customDateInput ? formatYMD(state.customDateInput) : formatYMD();
       } else {
-        effectiveDate = new Date().toISOString();
+        effectiveDate = formatYMD();
       }
 
       const discountAmount = state.getDiscountAmount();
+      const parsedDeposit = parseFloat(state.depositAmount) || 0;
 
       const receipt = await useAppDataStore.getState().createNewReceipt({
         items: cart.map((item) => ({
           productId: item.productId,
           qty: item.qty,
         })),
-        customerName: state.customerName.trim() || "Walk-in Customer",
+        customerName: state.customerName.trim() || (state.paymentMethod === 'Credit' ? "Credit Customer" : "Walk-in Customer"),
         customerPhone: state.customerPhone.trim() || undefined,
         paymentMethod: state.paymentMethod,
+        depositAmount: state.paymentMethod === 'Credit' ? parsedDeposit : undefined,
+        dueDate: state.paymentMethod === 'Credit' && state.dueDate ? state.dueDate : undefined,
         soldBy: state.soldBy?.trim() || undefined,
         date: effectiveDate,
         discount: discountAmount > 0 ? discountAmount : undefined,

@@ -7,9 +7,10 @@ import Checkbox from "expo-checkbox";
 import ArrowRight01Icon from "@hugeicons/core-free-icons/ArrowRight01Icon";
 
 import { AuthFooter } from "@/components/Auth/AuthFooter";
-import { ProgressIndicator } from "@/components/Auth/ProgressIndicator";
+import AuthHeader from "@/components/Auth/AuthHeader";
 import { Button } from "@/components/Elements/Buton";
 import { InputField } from "@/components/Elements/InputField";
+import LoadingOverlay from "@/components/Elements/LoadingOverlay";
 import { Colors } from "@/lib/colors";
 import { useSignUpScreen } from "@/hooks/useSignUpScreen";
 
@@ -24,6 +25,7 @@ export default function SignUpScreen() {
     showPassword,
     togglePassword,
     loading,
+    isGoogleLoading,
     isChecked,
     setIsChecked,
     errors,
@@ -34,19 +36,19 @@ export default function SignUpScreen() {
   } = useSignUpScreen();
 
   return (
-    <SafeAreaView className="flex-1 bg-bolt-surface">
+    <SafeAreaView className="flex-1 bg-white">
       <KeyboardAwareScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingVertical: 24 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         enableOnAndroid={false}
         extraScrollHeight={20}
       >
-        <View className="flex gap-4 p-6">
-          <ProgressIndicator
+        <View className="p-6">
+          <AuthHeader
             title="Create Account"
-            subtitle="Enter your personal details to get started"
+            label="Enter your personal details to get started"
           />
 
           <View className="gap-4">
@@ -143,12 +145,19 @@ export default function SignUpScreen() {
               switchPage="Already have an account? "
               action="Sign In"
               onPress={handleGoogleSignUp}
-              handleRoute={() => router.push("/(auth)")}
+              handleRoute={() => router.replace("/(auth)")}
               disabled={loading}
             />
           </View>
         </View>
       </KeyboardAwareScrollView>
+
+      {/* Screen-locking loader during account creation */}
+      <LoadingOverlay
+        visible={loading || isGoogleLoading}
+        message={isGoogleLoading ? "Connecting with Google..." : "Creating Account..."}
+        submessage="Preparing your store profile"
+      />
     </SafeAreaView>
   );
 }

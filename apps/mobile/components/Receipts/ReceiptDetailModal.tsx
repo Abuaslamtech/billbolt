@@ -1,12 +1,14 @@
 import React from "react";
 import {
-Modal,
+  Modal,
   View,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   ScrollView,
   ActivityIndicator
 } from 'react-native';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
 import Store01Icon from '@hugeicons/core-free-icons/Store01Icon';
@@ -33,6 +35,7 @@ export default function ReceiptDetailModal({
   visible,
   onClose,
 }: ReceiptDetailModalProps) {
+  const insets = useSafeAreaInsets();
   const {
     businessName,
     businessInfo,
@@ -56,8 +59,12 @@ export default function ReceiptDetailModal({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <View className="flex-1 justify-end bg-black/60">
-        {/* Modal Sheet Container */}
-        <View className="bg-bolt-surface w-full h-[85%] rounded-t-3xl shadow-2xl flex-col justify-between overflow-hidden">
+        <TouchableWithoutFeedback onPress={handleClose} accessibilityRole="button" accessibilityLabel="Dismiss receipt modal">
+          <View className="flex-1 w-full" />
+        </TouchableWithoutFeedback>
+        {/* Modal Sheet Container (Shadow separated from overflow-hidden for iOS UIKit) */}
+        <View className="w-full h-[85%] rounded-t-3xl shadow-2xl">
+          <View className="bg-bolt-surface w-full h-full rounded-t-3xl flex-col justify-between overflow-hidden">
           {/* Top Sheet Drag Handle & Navigation */}
           <View className="px-5 pt-3 pb-2 bg-bolt-card border-b border-bolt-border">
             <View className="items-center mb-2.5">
@@ -244,14 +251,19 @@ export default function ReceiptDetailModal({
                         {item.productName}
                       </Text>
                       <Text className="font-inter text-[11px] text-bolt-slate mt-0.5">
-                        {currency}{item.unitPrice.toLocaleString()} each
+                        {currency}{item.unitPrice.toLocaleString("en-NG")} each
                       </Text>
                     </View>
                     <Text className="w-12 font-inter-bold text-xs text-bolt-graphite text-center">
                       x{item.quantity}
                     </Text>
-                    <Text className="w-20 font-poppins-bold text-xs text-bolt-graphite text-right">
-                      {currency}{item.total.toLocaleString()}
+                    <Text
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                      className="w-20 font-poppins-bold text-xs text-bolt-graphite text-right"
+                    >
+                      {currency}{item.total.toLocaleString("en-NG")}
                     </Text>
                   </View>
                 ))}
@@ -344,7 +356,10 @@ export default function ReceiptDetailModal({
           </ScrollView>
 
           {/* ── 8. STICKY MODAL BOTTOM ACTION BAR ── */}
-          <View className="px-5 pt-3 pb-6 border-t border-bolt-border/60 bg-bolt-card">
+          <View
+            className="px-5 pt-3 border-t border-bolt-border/60 bg-bolt-card"
+            style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+          >
             <TouchableOpacity
               onPress={handleShareImage}
               disabled={isSharing}
@@ -364,7 +379,8 @@ export default function ReceiptDetailModal({
           </View>
         </View>
       </View>
-    </Modal>
-  );
+    </View>
+  </Modal>
+);
 }
 

@@ -11,16 +11,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import Alert02Icon from '@hugeicons/core-free-icons/Alert02Icon';
 import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
-import FlashIcon from '@hugeicons/core-free-icons/FlashIcon';
 import Invoice02Icon from '@hugeicons/core-free-icons/Invoice02Icon';
 import { router } from "expo-router";
 import { Colors } from "@/lib/colors";
-import { formatCurrency, formatTime, formatPaymentMethod } from "@/lib/formatters";
 
 import Header from "@/components/Header";
 import TodayRevenueCard from "@/components/TodayRevenueCard";
 import ActionButtons from "@/components/ActionButtons";
 import ReceiptRow from "@/components/ReceiptRow";
+import { ReceiptRowSkeleton } from "@/components/Elements/Skeleton";
 import TopSellingProducts from "@/components/TopSellingProducts";
 import ReceiptDetailModal from "@/components/Receipts/ReceiptDetailModal";
 import BarcodeScannerModal from "@/components/Scanner/BarcodeScannerModal";
@@ -39,6 +38,7 @@ export default function DashboardScreen() {
     setSelectedReceipt,
     refreshing,
     handleRefresh,
+    isInitialLoading,
     metrics,
     todaySales,
     yesterdaySales,
@@ -76,6 +76,10 @@ export default function DashboardScreen() {
               receiptsToday={receiptsToday}
               yesterdaySales={yesterdaySales}
               growth={growth}
+              loading={isInitialLoading}
+              todayCash={metrics?.todayCash}
+              todayTransfer={metrics?.todayTransfer}
+              todayCard={metrics?.todayCard}
             />
           </Animated.View>
 
@@ -94,7 +98,7 @@ export default function DashboardScreen() {
             <Animated.View entering={FadeInDown.delay(120).duration(400).springify()}>
             <TouchableOpacity
               className="mt-3.5 mb-3 bg-bolt-warning-bg border border-bolt-warning-border rounded-2xl p-4 flex-row items-center justify-between"
-              onPress={() => router.push("/(main)/InventoryScreen")}
+              onPress={() => router.navigate("/(main)/InventoryScreen")}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel={`${needReorder} items need attention. Tap to view inventory.`}
@@ -134,12 +138,12 @@ export default function DashboardScreen() {
           <View className="mt-4 flex-row items-center justify-between mb-2">
             <View className="flex-row items-center gap-2">
               <View className="w-1.5 h-1.5 rounded-full bg-bolt-blue" />
-              <Text className="text-xs font-inter-semibold text-bolt-slate uppercase tracking-widest">
+              <Text className="text-xs font-inter-semibold text-bolt-graphite/80 uppercase tracking-wider">
                 Recent Sales
               </Text>
             </View>
             <TouchableOpacity
-              onPress={() => router.push("/(main)/ReceiptScreen")}
+              onPress={() => router.navigate("/(main)/ReceiptScreen")}
               activeOpacity={0.7}
               accessibilityRole="button"
               accessibilityLabel="View all sales receipts"
@@ -156,7 +160,12 @@ export default function DashboardScreen() {
             className="bg-bolt-card rounded-2xl border border-bolt-border overflow-hidden"
             style={Shadows.card}
           >
-            {recentReceipts.length === 0 ? (
+            {isInitialLoading ? (
+              <>
+                <ReceiptRowSkeleton />
+                <ReceiptRowSkeleton isLast />
+              </>
+            ) : recentReceipts.length === 0 ? (
               <View className="p-8 items-center justify-center">
                 <View className="w-12 h-12 rounded-2xl bg-bolt-light items-center justify-center mb-3">
                   <HugeiconsIcon icon={Invoice02Icon} size={22} color={Colors.primary} />
@@ -165,7 +174,7 @@ export default function DashboardScreen() {
                   No sales recorded today
                 </Text>
                 <Text className="text-bolt-slate text-xs font-inter text-center mt-1">
-                  Tap "Record a Sale" above to log your first sale
+                  Tap &quot;Record a Sale&quot; above to log your first sale
                 </Text>
               </View>
             ) : (

@@ -42,11 +42,11 @@ export default function AppLockOverlay({
   }));
 
   const handlePressIn = () => {
-    buttonScale.value = withSpring(0.97, { stiffness: 400, damping: 15 });
+    buttonScale.set(withSpring(0.97, { stiffness: 400, damping: 15 }));
   };
 
   const handlePressOut = () => {
-    buttonScale.value = withSpring(1, { stiffness: 400, damping: 15 });
+    buttonScale.set(withSpring(1, { stiffness: 400, damping: 15 }));
   };
 
   const handleUnlockPress = () => {

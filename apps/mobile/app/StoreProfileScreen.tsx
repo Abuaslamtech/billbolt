@@ -25,6 +25,7 @@ import Edit02Icon from '@hugeicons/core-free-icons/Edit02Icon';
 import { Button } from "@/components/Elements/Buton";
 import SettingRow from "@/components/Elements/SettingRow";
 import ScreenHeader from "@/components/Elements/ScreenHeader";
+import LoadingOverlay from "@/components/Elements/LoadingOverlay";
 import { Colors } from "@/lib/colors";
 import { getCurrencySymbol } from "@/lib/formatters";
 import { useStoreProfileScreen } from "@/hooks/useStoreProfileScreen";
@@ -195,7 +196,12 @@ export default function StoreProfileScreen() {
       </ScrollView>
 
       {/* ── EDIT STORE DETAILS MODAL (Bottom Sheet) ── */}
-      <Modal visible={isEditStoreOpen} animationType="slide" transparent>
+      <Modal
+        visible={isEditStoreOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setIsEditStoreOpen(false)}
+      >
         <KeyboardAvoidingView
           behavior="padding"
           className="flex-1 justify-end bg-black/50"
@@ -324,6 +330,13 @@ export default function StoreProfileScreen() {
           </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Screen-locking loader during store profile updates */}
+      <LoadingOverlay
+        visible={isSaving || isUploadingLogo}
+        message={isUploadingLogo ? "Uploading Store Logo..." : "Saving Store Details..."}
+        submessage="Updating your business information"
+      />
     </SafeAreaView>
   );
 }

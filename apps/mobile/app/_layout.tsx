@@ -6,7 +6,9 @@ cssInterop(Image, { className: "style" });
 
 import {
   Inter_400Regular,
+  Inter_500Medium,
   Inter_600SemiBold,
+  Inter_700Bold,
 } from "@expo-google-fonts/inter";
 import {
   Poppins_400Regular,
@@ -19,11 +21,18 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { Text, TextInput } from "react-native";
 import "react-native-reanimated";
 import Toast from "react-native-toast-message";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { toastConfig } from "@/components/Elements/ToastConfig";
 import { startNetworkSyncListener } from "@/services/sync/syncEngine";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
+
+// Cap system font scaling at 1.25x so extreme accessibility settings don't break layouts
+[Text, TextInput].forEach((comp: any) => {
+  comp.defaultProps = { ...comp.defaultProps, maxFontSizeMultiplier: 1.25 };
+});
 
 // Configure Google Sign-In once at app startup
 GoogleSignin.configure({
@@ -41,17 +50,17 @@ export default function RootLayout() {
     Poppins_600SemiBold,
     Poppins_700Bold,
     Inter_400Regular,
+    Inter_500Medium,
     Inter_600SemiBold,
+    Inter_700Bold,
   });
 
-  // Hide the native splash immediately on first render so our custom
-  // splash screen (index.tsx) is visible for the full boot sequence.
+  // Hide splash screen once fonts are resolved to eliminate FOYT and layout shifts
   useEffect(() => {
-    const t = setTimeout(() => {
+    if (fontsLoaded || fontsError) {
       SplashScreen.hideAsync().catch(() => {});
-    }, 16); // single frame — show native splash just long enough to avoid a white flash
-    return () => clearTimeout(t);
-  }, []);
+    }
+  }, [fontsLoaded, fontsError]);
 
   // Mount offline network sync listener
   useEffect(() => {
@@ -61,14 +70,23 @@ export default function RootLayout() {
     };
   }, []);
 
-  // Always render — fonts load in background, Poppins/Inter have system fallbacks
-  // so text is readable even before font files finish loading.
+  const insets = useSafeAreaInsets();
+
+  if (!fontsLoaded && !fontsError) {
+    return null;
+  }
 
   return (
     <>
       <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false }} />
-      <Toast config={toastConfig} topOffset={54} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: "slide_from_right",
+          contentStyle: { backgroundColor: "#F9FAFB" },
+        }}
+      />
+      <Toast config={toastConfig} topOffset={Math.max(insets.top + 8, 54)} />
     </>
   );
 }

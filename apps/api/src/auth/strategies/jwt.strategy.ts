@@ -20,7 +20,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload) {
+  validate(payload: JwtPayload): JwtPayload {
     if (!payload.sub) throw new UnauthorizedException('Invalid token payload');
     return payload; // attached to request.user
   }

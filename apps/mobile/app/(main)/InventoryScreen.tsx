@@ -25,6 +25,7 @@ import QrCode01Icon from '@hugeicons/core-free-icons/QrCode01Icon';
 
 import Header from "@/components/Header";
 import ProductQrLabelModal from "@/components/QR/ProductQrLabelModal";
+import { ProductRowSkeleton } from "@/components/Elements/Skeleton";
 import { ProductWithStock } from "@/types/models";
 import { Colors } from "@/lib/colors";
 import { useInventoryScreen } from "@/hooks/useInventoryScreen";
@@ -49,6 +50,7 @@ export default function InventoryScreen() {
     outOfStockCount,
     refreshing,
     handleRefresh,
+    isInitialLoading,
     fmt,
     isAddModalVisible,
     setIsAddModalVisible,
@@ -317,7 +319,17 @@ export default function InventoryScreen() {
 
         {/* ── 4. Unified Grouped Product Catalog List ─────────────────── */}
         <View className="pb-8">
-          {filteredProducts.length === 0 ? (
+          {isInitialLoading ? (
+            <View
+              className="bg-bolt-card rounded-2xl border border-bolt-border overflow-hidden"
+              style={Shadows.card}
+            >
+              <ProductRowSkeleton />
+              <ProductRowSkeleton />
+              <ProductRowSkeleton />
+              <ProductRowSkeleton isLast />
+            </View>
+          ) : filteredProducts.length === 0 ? (
             <View
               className="bg-bolt-card rounded-2xl p-8 items-center justify-center border border-bolt-border mt-1"
               style={Shadows.card}
@@ -406,13 +418,13 @@ export default function InventoryScreen() {
                           {isOut
                             ? "Out of stock"
                             : isLow
-                              ? `${product.currentStock} left (Low)`
+                              ? `${product.currentStock} left (Reorder at ${product.reorderLevel || 5})`
                               : `${product.currentStock} in stock`}
                         </Text>
                       </View>
                     </View>
 
-                    {/* Right: Price & QR Button */}
+                    {/* Right: Price & Actions */}
                     <View className="items-end justify-center shrink-0 pl-2">
                       <Text className="font-poppins-bold text-sm text-bolt-graphite mb-1.5">
                         {fmt(product.sellingPrice)}
@@ -429,10 +441,25 @@ export default function InventoryScreen() {
                           }}
                           accessibilityRole="button"
                           accessibilityLabel={`View QR sticker for ${product.name}`}
-                          className="h-7 px-3 rounded-lg bg-bolt-light border border-bolt-light flex-row items-center justify-center gap-1.5 active:opacity-75"
+                          className="h-9 px-2.5 rounded-xl bg-bolt-light border border-bolt-light flex-row items-center justify-center gap-1 active:opacity-75"
                         >
-                          <HugeiconsIcon icon={QrCode01Icon} size={14} color={Colors.primary} />
-                          <Text className="font-inter-semibold text-xs text-bolt-blue">View QR</Text>
+                          <HugeiconsIcon icon={QrCode01Icon} size={13} color={Colors.primary} />
+                          <Text className="font-inter-semibold text-2xs text-bolt-blue">QR</Text>
+                        </TouchableOpacity>
+
+                        {/* 2. Explicit Restock Button */}
+                        <TouchableOpacity
+                          onPress={(e) => {
+                            e.stopPropagation?.();
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            handleRestockProduct(product.id);
+                          }}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Restock ${product.name}`}
+                          className="h-9 px-2.5 rounded-xl bg-bolt-blue flex-row items-center justify-center gap-1 active:opacity-85"
+                        >
+                          <HugeiconsIcon icon={PackageReceiveIcon} size={13} color="#FFFFFF" />
+                          <Text className="font-inter-semibold text-2xs text-white">Restock</Text>
                         </TouchableOpacity>
                       </View>
                     </View>

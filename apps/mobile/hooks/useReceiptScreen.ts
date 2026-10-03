@@ -9,7 +9,7 @@ export function useReceiptScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
-  const { metrics, receipts, refresh } = useAppDataStore();
+  const { metrics, receipts, refresh, isLoading, isInitialized } = useAppDataStore();
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -58,6 +58,7 @@ export function useReceiptScreen() {
     todayReceiptsCount,
     monthRevenue,
     growth,
+    isInitialLoading: !isInitialized || (isLoading && !metrics),
     openRecordSaleScreen,
     isScannerOpen,
     openScanner,

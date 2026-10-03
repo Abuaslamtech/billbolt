@@ -2,9 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '@/lib/apiClient';
 import { useSyncStore } from '@/store/syncStore';
-import { generateId } from '@/services/storage/cycleUtils';
+import { generateId, formatYMD } from '@/services/storage/cycleUtils';
+import { remapCachedProductIds } from '@/services/storage/offlineCache';
 
 const SYNC_QUEUE_KEY = '@billbolt_sync_queue';
+const ID_MAP_KEY = '@billbolt_id_mappings';
 
 // Dynamically load NetInfo precompiled bundle if available in environment
 let NetInfo: any = null;
@@ -26,7 +28,8 @@ export type SyncActionType =
   | 'CREATE_RECEIPT'
   | 'ADD_PRODUCT'
   | 'LOG_RESTOCK'
-  | 'UPDATE_BUSINESS';
+  | 'UPDATE_BUSINESS'
+  | 'RECORD_DEBT_REPAYMENT';
 
 export interface SyncQueueItem {
   id: string;
@@ -39,6 +42,25 @@ export interface SyncQueueItem {
 }
 
 let isProcessing = false;
+
+// ─── Persistent ID Map (Survives app restarts) ────────────────────────────────
+
+export async function getPersistentIdMap(): Promise<Record<string, string>> {
+  try {
+    const raw = await AsyncStorage.getItem(ID_MAP_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function savePersistentIdMap(map: Record<string, string>): Promise<void> {
+  try {
+    await AsyncStorage.setItem(ID_MAP_KEY, JSON.stringify(map));
+  } catch (err) {
+    console.error('[SyncEngine] Failed to save ID map:', err);
+  }
+}
 
 // ─── Queue Management ─────────────────────────────────────────────────────────
 
@@ -63,6 +85,7 @@ async function savePendingQueue(queue: SyncQueueItem[]): Promise<void> {
 export async function clearSyncQueue(): Promise<void> {
   try {
     await AsyncStorage.removeItem(SYNC_QUEUE_KEY);
+    await AsyncStorage.removeItem(ID_MAP_KEY);
     useSyncStore.getState().setPendingCount(0);
   } catch (err) {
     console.error('[SyncEngine] Failed to clear sync queue:', err);
@@ -99,15 +122,13 @@ export async function enqueueSyncAction(
   }
 }
 
-// ─── Queue Processor ──────────────────────────────────────────────────────────
+// ─── Production-Grade Atomic Batch Sync Processor ────────────────────────────
 
 export async function processSyncQueue(): Promise<void> {
   if (isProcessing) return;
-  // Acquire mutex immediately and synchronously before any asynchronous pause
+  // Acquire mutex immediately and synchronously
   isProcessing = true;
   useSyncStore.getState().setIsSyncing(true);
-
-  let remainingQueue: SyncQueueItem[] = [];
 
   try {
     const queue = await getPendingQueue();
@@ -116,82 +137,156 @@ export async function processSyncQueue(): Promise<void> {
       return;
     }
 
-    // Deduplicate by tempEntityId to prevent executing identical actions
+    const persistentIdMap = await getPersistentIdMap();
+
+    const productsToSync: any[] = [];
+    const restocksToSync: any[] = [];
+    const receiptsToSync: any[] = [];
+    const repaymentsToSync: any[] = [];
+    const businessUpdatesToSync: SyncQueueItem[] = [];
+
+    // Deduplicate by tempEntityId / receiptNumber to prevent duplicate payloads
     const seenTempIds = new Set<string>();
-    const deduplicatedQueue: SyncQueueItem[] = [];
+
     for (const item of queue) {
       if (item.tempEntityId) {
         if (seenTempIds.has(item.tempEntityId)) continue;
         seenTempIds.add(item.tempEntityId);
       }
-      deduplicatedQueue.push(item);
-    }
 
-    const initialCount = deduplicatedQueue.length;
-    remainingQueue = [...deduplicatedQueue];
-    const idMap: Record<string, string> = {}; // Maps tempId -> serverId
-
-    while (remainingQueue.length > 0) {
-      const currentItem = remainingQueue[0];
-
-      try {
-        if (currentItem.type === 'ADD_PRODUCT') {
-          const { data } = await apiClient.post('/inventory/products', currentItem.payload);
-          if (currentItem.tempEntityId && data?.id) {
-            idMap[currentItem.tempEntityId] = data.id;
-          }
-        } else if (currentItem.type === 'LOG_RESTOCK') {
-          const payload = { ...currentItem.payload };
-          if (idMap[payload.productId]) {
-            payload.productId = idMap[payload.productId];
-          }
-          await apiClient.post('/inventory/restocks', payload);
-        } else if (currentItem.type === 'CREATE_RECEIPT') {
-          const payload = { ...currentItem.payload };
-          if (Array.isArray(payload.items)) {
-            payload.items = payload.items.map((item: any) => ({
-              ...item,
-              productId: idMap[item.productId] || item.productId,
-            }));
-          }
-          await apiClient.post('/receipts', payload);
-        } else if (currentItem.type === 'UPDATE_BUSINESS') {
-          await apiClient.patch('/business/me', currentItem.payload);
-        }
-
-        // Successfully synced this item -> remove from remaining queue
-        remainingQueue.shift();
-        await savePendingQueue(remainingQueue);
-      } catch (err: any) {
-        console.error(`[SyncEngine] Error syncing item ${currentItem.id}:`, err);
-
-        const isNetworkError =
-          !err?.response ||
-          err?.code === 'ECONNABORTED' ||
-          err?.message?.includes('Network Error');
-
-        if (isNetworkError) {
-          useSyncStore.getState().setIsOnline(false);
-          // Break loop on network failure and retry when connection returns
-          break;
-        }
-
-        // Non-network error (e.g. 400 Bad Request / Validation error)
-        currentItem.retryCount += 1;
-        currentItem.lastError = err?.response?.data?.message || err.message;
-
-        if (currentItem.retryCount >= 3) {
-          // Drop invalid items after 3 attempts to prevent stuck queue
-          console.warn(`[SyncEngine] Dropping unrecoverable item ${currentItem.id}`);
-          remainingQueue.shift();
-          await savePendingQueue(remainingQueue);
-        } else {
-          break;
-        }
+      if (item.type === 'ADD_PRODUCT') {
+        productsToSync.push({
+          clientTempId: item.tempEntityId || item.id,
+          name: item.payload.name,
+          category: item.payload.category,
+          qrCode: item.payload.qrCode,
+          costPrice: Number(item.payload.costPrice) || 0,
+          sellingPrice: Number(item.payload.sellingPrice) || 0,
+          openingStock: parseInt(item.payload.openingStock, 10) || 0,
+          reorderLevel: parseInt(item.payload.reorderLevel, 10) || 5,
+        });
+      } else if (item.type === 'LOG_RESTOCK') {
+        const resolvedProdId =
+          persistentIdMap[item.payload.productId] || item.payload.productId;
+        restocksToSync.push({
+          clientTempId: item.tempEntityId || item.id,
+          productId: resolvedProdId,
+          qty: item.payload.qty,
+          costPerUnit: Number(item.payload.costPerUnit) || 0,
+          date: item.payload.date ? formatYMD(item.payload.date) : formatYMD(),
+          notes: item.payload.notes,
+        });
+      } else if (item.type === 'CREATE_RECEIPT') {
+        const items = Array.isArray(item.payload.items)
+          ? item.payload.items.map((i: any) => ({
+              productId: persistentIdMap[i.productId] || i.productId,
+              qty: i.qty,
+            }))
+          : [];
+        receiptsToSync.push({
+          receiptNumber: item.payload.receiptNumber,
+          customerName: item.payload.customerName || 'Walk-in Customer',
+          customerPhone: item.payload.customerPhone,
+          items,
+          paymentMethod: item.payload.paymentMethod,
+          soldBy: item.payload.soldBy,
+          notes: item.payload.notes,
+          date: item.payload.date ? formatYMD(item.payload.date) : formatYMD(),
+          discount: item.payload.discount ? Number(item.payload.discount) : undefined,
+        });
+      } else if (item.type === 'RECORD_DEBT_REPAYMENT') {
+        repaymentsToSync.push({
+          clientTempId: item.tempEntityId || item.id,
+          receiptId: item.payload.receiptId,
+          customerPhone: item.payload.customerPhone,
+          customerName: item.payload.customerName,
+          amount: Number(item.payload.amount) || 0,
+          paymentMethod: item.payload.paymentMethod || 'Cash',
+          date: item.payload.date ? formatYMD(item.payload.date) : formatYMD(),
+          note: item.payload.note,
+        });
+      } else if (item.type === 'UPDATE_BUSINESS') {
+        businessUpdatesToSync.push(item);
       }
     }
 
-    const syncedCount = initialCount - remainingQueue.length;
+    let syncedProductIds: Record<string, string> = {};
+    let syncedRestockTempIds: string[] = [];
+    let syncedReceiptNumbers: string[] = [];
+    let syncedRepaymentTempIds: string[] = [];
+
+    // 1. Process batch sync if there are products, restocks, receipts, or repayments
+    if (
+      productsToSync.length > 0 ||
+      restocksToSync.length > 0 ||
+      receiptsToSync.length > 0 ||
+      repaymentsToSync.length > 0
+    ) {
+      const batchPayload = {
+        products: productsToSync,
+        restocks: restocksToSync,
+        receipts: receiptsToSync,
+        repayments: repaymentsToSync,
+      };
+
+      const { data } = await apiClient.post('/sync', batchPayload);
+
+      if (data?.syncedProductIds && Object.keys(data.syncedProductIds).length > 0) {
+        syncedProductIds = data.syncedProductIds;
+        Object.assign(persistentIdMap, syncedProductIds);
+        await savePersistentIdMap(persistentIdMap);
+        await remapCachedProductIds(syncedProductIds);
+      }
+      if (Array.isArray(data?.syncedRestockTempIds)) {
+        syncedRestockTempIds = data.syncedRestockTempIds;
+      }
+      if (Array.isArray(data?.syncedReceiptNumbers)) {
+        syncedReceiptNumbers = data.syncedReceiptNumbers;
+      }
+      if (Array.isArray(data?.syncedRepaymentTempIds)) {
+        syncedRepaymentTempIds = data.syncedRepaymentTempIds;
+      }
+    }
+
+    // 2. Process business updates (if any)
+    const syncedBusinessIds: string[] = [];
+    for (const bItem of businessUpdatesToSync) {
+      try {
+        await apiClient.patch('/business/me', bItem.payload);
+        syncedBusinessIds.push(bItem.id);
+      } catch (bErr) {
+        console.error('[SyncEngine] Business update sync failed:', bErr);
+      }
+    }
+
+    // 3. Filter acknowledged items out of the pending queue (Never blindly drop!)
+    const remainingQueue = queue.filter((item) => {
+      if (item.type === 'ADD_PRODUCT') {
+        const tempId = item.tempEntityId || item.id;
+        return !syncedProductIds[tempId];
+      }
+      if (item.type === 'LOG_RESTOCK') {
+        const tempId = item.tempEntityId || item.id;
+        return !syncedRestockTempIds.includes(tempId);
+      }
+      if (item.type === 'CREATE_RECEIPT') {
+        return !syncedReceiptNumbers.includes(item.payload?.receiptNumber);
+      }
+      if (item.type === 'RECORD_DEBT_REPAYMENT') {
+        const tempId = item.tempEntityId || item.id;
+        return !syncedRepaymentTempIds.includes(tempId);
+      }
+      if (item.type === 'UPDATE_BUSINESS') {
+        return !syncedBusinessIds.includes(item.id);
+      }
+      return false;
+    });
+
+    await savePendingQueue(remainingQueue);
+
+    const initialTotal = queue.length;
+    const syncedCount = initialTotal - remainingQueue.length;
+
     if (syncedCount > 0) {
       useSyncStore.getState().setLastSyncedAt(new Date());
 
@@ -205,10 +300,28 @@ export async function processSyncQueue(): Promise<void> {
         text2: `Successfully synced ${syncedCount} offline record${syncedCount > 1 ? 's' : ''}.`,
       });
     }
+  } catch (err: any) {
+    console.error('[SyncEngine] Batch sync error:', err);
+
+    const isNetworkError =
+      !err?.response ||
+      err?.code === 'ECONNABORTED' ||
+      err?.message?.includes('Network Error');
+
+    if (isNetworkError) {
+      useSyncStore.getState().setIsOnline(false);
+    } else {
+      // Server error or validation failure — keep records safe in storage, do NOT delete
+      console.warn(
+        '[SyncEngine] Server responded with error during batch sync:',
+        err?.response?.data || err.message,
+      );
+    }
   } finally {
     isProcessing = false;
     useSyncStore.getState().setIsSyncing(false);
-    useSyncStore.getState().setPendingCount(remainingQueue.length);
+    const remaining = await getPendingQueue();
+    useSyncStore.getState().setPendingCount(remaining.length);
   }
 }
 
@@ -220,7 +333,7 @@ export function startNetworkSyncListener(): () => void {
     useSyncStore.getState().setPendingCount(q.length);
   });
 
-  const cleanupFunctions: Array<() => void> = [];
+  const cleanupFunctions: (() => void)[] = [];
 
   // 2. Fetch initial network state immediately
   if (NetInfo?.fetch) {

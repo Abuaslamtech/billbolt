@@ -1,14 +1,11 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
 import { PrismaService } from 'prisma/prisma.service';
 import {
   EmailLoginDto,
@@ -17,11 +14,7 @@ import {
 } from './dto/email-auth.dto';
 import { GoogleAuthDto } from './dto/google-auth.dto';
 import { GoogleAuthService } from './google-auth.service';
-import { JwtPayload } from './strategies/jwt.strategy';
-
-const REFRESH_TOKEN_BYTES = 64;
-const REFRESH_TOKEN_EXPIRES_DAYS = 90;
-const ACCESS_TOKEN_EXPIRES = '30d';
+import { generateAccessAndRefreshToken, hashToken } from './utils/token.utils';
 
 @Injectable()
 export class AuthService {
@@ -30,66 +23,30 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
     private readonly googleAuthService: GoogleAuthService,
   ) {}
 
-  // ─── Token Helpers ──────────────────────────────────────────────────────────
-
-  private signAccessToken(payload: JwtPayload): string {
-    return this.jwtService.sign(payload, {
-      secret: this.configService.getOrThrow('JWT_SECRET'),
-      expiresIn: ACCESS_TOKEN_EXPIRES,
-    });
-  }
-
-  private generateRefreshToken(): string {
-    return crypto.randomBytes(REFRESH_TOKEN_BYTES).toString('hex');
-  }
-
-  private refreshTokenExpiry(): Date {
-    const d = new Date();
-    d.setDate(d.getDate() + REFRESH_TOKEN_EXPIRES_DAYS);
-    return d;
-  }
-
-  /** Issue a single-session rotatable refresh token for the user */
-  private async issueRefreshToken(userId: string): Promise<string> {
-    const token = this.generateRefreshToken();
-
-    await this.prisma.refreshToken.deleteMany({ where: { userId } });
-
-    await this.prisma.refreshToken.create({
-      data: {
-        userId,
-        token,
-        expiresAt: this.refreshTokenExpiry(),
-      },
-    });
-
-    return token;
-  }
-
   /** Build full auth response */
-  private async buildAuthResponse(userId: string) {
+  async buildAuthResponse(userId: string) {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
       include: { business: true },
     });
 
-    const payload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-      businessId: user.business?.id ?? '',
-      role: user.role,
-    };
+    const tokens = generateAccessAndRefreshToken(this.jwtService, user);
 
-    const accessToken = this.signAccessToken(payload);
-    const refreshToken = await this.issueRefreshToken(userId);
+    await this.prisma.refreshToken.deleteMany({ where: { userId } });
+    await this.prisma.refreshToken.create({
+      data: {
+        userId,
+        token: tokens.hashedRefreshToken,
+        expiresAt: tokens.expiresAt,
+      },
+    });
 
     return {
-      accessToken,
-      refreshToken,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
       needsBusinessSetup: !user.business,
       user: {
         id: user.id,
@@ -144,6 +101,10 @@ export class AuthService {
       });
     }
 
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account is disabled. Contact support.');
+    }
+
     return this.buildAuthResponse(user.id);
   }
 
@@ -179,7 +140,7 @@ export class AuthService {
         },
       });
 
-      let business: any = null;
+      let business: unknown = null;
       if (dto.businessName?.trim()) {
         business = await tx.business.create({
           data: {
@@ -224,8 +185,10 @@ export class AuthService {
   // ─── Refresh Token ──────────────────────────────────────────────────────────
 
   async refresh(dto: RefreshTokenDto) {
+    const hashedIncoming = hashToken(dto.refreshToken);
+
     const stored = await this.prisma.refreshToken.findUnique({
-      where: { token: dto.refreshToken },
+      where: { token: hashedIncoming },
       include: { user: true },
     });
 
@@ -235,6 +198,9 @@ export class AuthService {
       throw new UnauthorizedException(
         'Refresh token expired. Please sign in again.',
       );
+    }
+    if (!stored.user?.isActive) {
+      throw new UnauthorizedException('Account is disabled. Contact support.');
     }
 
     return this.buildAuthResponse(stored.userId);
@@ -252,7 +218,21 @@ export class AuthService {
   async getMyProfile(userId: string) {
     return this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
-      include: { business: true },
+      select: {
+        id: true,
+        email: true,
+        googleId: true,
+        firebaseUid: true,
+        fullName: true,
+        phone: true,
+        avatarUrl: true,
+        role: true,
+        isActive: true,
+        credit: true,
+        createdAt: true,
+        updatedAt: true,
+        business: true,
+      },
     });
   }
 }

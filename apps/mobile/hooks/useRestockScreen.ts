@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { BackHandler } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
 import Toast from "react-native-toast-message";
@@ -210,6 +211,7 @@ export function useRestockScreen() {
   };
 
   const handleSubmitRestock = async () => {
+    if (isSubmitting) return;
     const validBatch = batch.filter((item) => item.qty > 0);
     if (validBatch.length === 0) {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -246,6 +248,41 @@ export function useRestockScreen() {
       setIsSubmitting(false);
     }
   };
+
+  // Hardware Back Button Intercept: step back or dismiss modals safely
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (isSubmitting) {
+        return true;
+      }
+      if (isScannerOpen) {
+        setIsScannerOpen(false);
+        return true;
+      }
+      if (quantityPickerTarget) {
+        setQuantityPickerTarget(null);
+        return true;
+      }
+      if (step === "ADJUST_QUANTITIES") {
+        setStep("SELECT_PRODUCTS");
+        return true;
+      }
+      if (step === "SUCCESS") {
+        router.back();
+        return true;
+      }
+      return false;
+    });
+    return () => subscription.remove();
+  }, [
+    isSubmitting,
+    isScannerOpen,
+    quantityPickerTarget,
+    step,
+    setIsScannerOpen,
+    setQuantityPickerTarget,
+    setStep,
+  ]);
 
   return {
     step,

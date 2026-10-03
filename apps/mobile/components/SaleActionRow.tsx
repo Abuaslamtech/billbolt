@@ -25,7 +25,7 @@ export default function SaleActionRow({
     <View className="flex-row items-center gap-2">
       {/* Primary Hero: Record a Sale Button */}
       <TouchableOpacity
-        className="flex-1 bg-bolt-blue rounded-2xl h-14 flex-row items-center justify-center gap-2"
+        className="flex-1 bg-bolt-blue rounded-2xl min-h-[56px] py-3.5 px-3 flex-row items-center justify-center gap-2"
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           onRecordSale();
@@ -36,14 +36,19 @@ export default function SaleActionRow({
         style={Shadows.primaryButton}
       >
         <HugeiconsIcon icon={FlashIcon} size={18} color="#FFFFFF" />
-        <Text className="text-white text-base font-inter-bold tracking-wide">
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
+          className="text-white text-base font-inter-bold tracking-wide"
+        >
           Record a Sale
         </Text>
       </TouchableOpacity>
 
       {/* Companion: Scan Barcode Button with Clear Label */}
       <TouchableOpacity
-        className="h-14 bg-bolt-surface border border-bolt-border rounded-2xl px-4 flex-row items-center justify-center gap-2 active:bg-bolt-divider"
+        className="min-h-[56px] py-3.5 bg-bolt-surface border border-bolt-border rounded-2xl px-4 flex-row items-center justify-center gap-2 active:bg-bolt-divider"
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           if (onScanBarcode) {
@@ -58,7 +63,12 @@ export default function SaleActionRow({
         style={Shadows.card}
       >
         <HugeiconsIcon icon={QrCode01Icon} size={20} color={Colors.primary} />
-        <Text className="text-bolt-blue text-xs font-inter-semibold">
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
+          className="text-bolt-blue text-sm font-inter-semibold"
+        >
           Scan
         </Text>
       </TouchableOpacity>
