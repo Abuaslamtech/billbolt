@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { View, Text, TouchableOpacity, TextInput } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import Search01Icon from '@hugeicons/core-free-icons/Search01Icon';
-import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
 import Invoice02Icon from '@hugeicons/core-free-icons/Invoice02Icon';
 import ArrowDown01Icon from '@hugeicons/core-free-icons/ArrowDown01Icon';
 import * as Haptics from "expo-haptics";
@@ -11,6 +9,7 @@ import { Receipt } from "@/types/models";
 import ReceiptDetailModal from "@/components/Receipts/ReceiptDetailModal";
 import ReceiptRow from "@/components/ReceiptRow";
 import { ReceiptRowSkeleton } from "@/components/Elements/Skeleton";
+import SearchBar from "@/components/Elements/SearchBar";
 import { formatReceiptNo } from "@/services/storage/cycleUtils";
 import { Colors } from "@/lib/colors";
 import { Shadows } from "@/lib/styles";
@@ -82,32 +81,15 @@ export default function ReceiptHistory() {
         </View>
 
         {/* Search Bar — Comfortable 48px Touch Target */}
-        <View
-          className="flex-row items-center bg-bolt-card border border-bolt-border rounded-2xl px-3.5 h-12 mb-3"
-          style={Shadows.card}
-        >
-          <HugeiconsIcon icon={Search01Icon} size={18} color={Colors.slate} />
-          <TextInput
-            value={searchQuery}
-            onChangeText={(text) => {
-              setSearchQuery(text);
-              setVisibleCount(PAGE_SIZE);
-            }}
-            placeholder="Search by customer, receipt number or date..."
-            placeholderTextColor={Colors.slate}
-            className="flex-1 font-inter-medium text-sm text-bolt-graphite ml-2.5 py-0 h-full"
-          />
-          {searchQuery ? (
-            <TouchableOpacity
-              onPress={() => setSearchQuery("")}
-              className="w-8 h-8 items-center justify-center -mr-1"
-              accessibilityRole="button"
-              accessibilityLabel="Clear search"
-            >
-              <HugeiconsIcon icon={Cancel01Icon} size={16} color={Colors.slate} />
-            </TouchableOpacity>
-          ) : null}
-        </View>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={(text) => {
+            setSearchQuery(text);
+            setVisibleCount(PAGE_SIZE);
+          }}
+          placeholder="Search by customer, receipt number or date..."
+          containerClassName="mb-3"
+        />
 
         {/* Quick Filter Pills */}
         <View className="flex-row gap-2">

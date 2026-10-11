@@ -2,7 +2,6 @@ import React from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   FlatList,
@@ -11,8 +10,6 @@ import {
 import { router } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
-import Search01Icon from '@hugeicons/core-free-icons/Search01Icon';
 import ShoppingCart01Icon from '@hugeicons/core-free-icons/ShoppingCart01Icon';
 import ArrowRight02Icon from '@hugeicons/core-free-icons/ArrowRight02Icon';
 import Package01Icon from '@hugeicons/core-free-icons/Package01Icon';
@@ -22,6 +19,7 @@ import BackButton from "@/components/Elements/BackButton";
 import ConfirmDialog from "@/components/Elements/ConfirmDialog";
 import QuantityPickerModal from "@/components/Elements/QuantityPickerModal";
 import BarcodeScannerModal from "@/components/Scanner/BarcodeScannerModal";
+import SearchBar from "@/components/Elements/SearchBar";
 import { SaleProductRow } from "@/components/SaleProductRow";
 import { Colors } from "@/lib/colors";
 import { formatCurrency } from "@/store/saleStore";
@@ -119,29 +117,11 @@ export default function SaleCatalogScreen() {
 
         {/* ── Search Bar & Category Filter Chips ──────────────────────────── */}
         <View className="px-4 pt-3 pb-2">
-          {/* 48px Search Bar */}
-          <View className="flex-row items-center bg-bolt-card border border-bolt-border rounded-2xl px-3.5 h-12">
-            <HugeiconsIcon icon={Search01Icon} size={18} color={Colors.slate} />
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search products or category..."
-              placeholderTextColor={Colors.slate}
-              className="flex-1 ml-2.5 font-inter text-sm text-bolt-graphite py-0"
-              returnKeyType="search"
-              clearButtonMode="while-editing"
-            />
-            {searchQuery ? (
-              <TouchableOpacity
-                onPress={() => setSearchQuery("")}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel="Clear search"
-              >
-                <HugeiconsIcon icon={Cancel01Icon} size={16} color={Colors.slate} />
-              </TouchableOpacity>
-            ) : null}
-          </View>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search products or category..."
+          />
         </View>
 
         {/* Frequently Sold 1-Click Quick Sale Strip */}

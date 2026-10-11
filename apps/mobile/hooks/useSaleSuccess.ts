@@ -11,7 +11,7 @@ export function useSaleSuccess() {
 
   const handleRecordAnother = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace("/(sale)");
+    router.replace("/(main)/sell");
     resetSale();
   }, [resetSale]);
 

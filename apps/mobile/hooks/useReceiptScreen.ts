@@ -22,6 +22,9 @@ export function useReceiptScreen() {
   const yesterdaySales = metrics?.yesterdaySales ?? 0;
   const monthRevenue = metrics?.thisMonthRevenue ?? 0;
   const growth = metrics?.todaySalesGrowth ?? 0;
+  const todayCash = metrics?.todayCash ?? 0;
+  const todayTransfer = metrics?.todayTransfer ?? 0;
+  const todayCard = metrics?.todayCard ?? 0;
 
   const todayReceiptsCount = useMemo(() => {
     return countTodayReceipts(receipts);
@@ -30,7 +33,7 @@ export function useReceiptScreen() {
   // Screen navigation handlers
   const openRecordSaleScreen = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push("/(sale)");
+    router.push("/(main)/sell");
   }, []);
 
   const openScanner = useCallback(() => {
@@ -45,7 +48,7 @@ export function useReceiptScreen() {
   const handleProductScanned = useCallback((product: ProductWithStock) => {
     setIsScannerOpen(false);
     router.push({
-      pathname: "/(sale)",
+      pathname: "/(main)/sell",
       params: { initialProductId: product.id },
     });
   }, []);
@@ -58,6 +61,9 @@ export function useReceiptScreen() {
     todayReceiptsCount,
     monthRevenue,
     growth,
+    todayCash,
+    todayTransfer,
+    todayCard,
     isInitialLoading: !isInitialized || (isLoading && !metrics),
     openRecordSaleScreen,
     isScannerOpen,

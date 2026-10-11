@@ -106,7 +106,7 @@ export function useSaleCheckout() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const receipt = await recordSale();
     if (receipt) {
-      router.replace("/(sale)/success");
+      router.replace("/(main)/sell/success");
     }
   }, [isSubmitting, paymentMethod, customerName, recordSale]);
 
@@ -119,7 +119,7 @@ export function useSaleCheckout() {
   // Guard: if cart is empty and not currently in submission, redirect back to catalog
   useEffect(() => {
     if (cart.length === 0 && !isSubmitting) {
-      router.replace("/(sale)");
+      router.replace("/(main)/sell");
     }
   }, [cart.length, isSubmitting]);
 

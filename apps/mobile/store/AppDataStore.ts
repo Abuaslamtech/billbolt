@@ -299,6 +299,65 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
         };
       }
 
+      // ─── Guarantee Payment Breakdown & Debtor Metrics are ALWAYS Enriched ───
+      // When the server analytics response omits paymentMethod totals or debtors,
+      // derive them from cached/synced receipts and repayments so counters balance.
+      const now = new Date();
+      const todayStr = formatYMD(now);
+      const isDateTodayVal = (dateVal?: string) => {
+        if (!dateVal) return false;
+        if (dateVal.startsWith(todayStr)) return true;
+        try {
+          return formatYMD(dateVal) === todayStr;
+        } catch {
+          return false;
+        }
+      };
+
+      const todayReceiptsList = receipts.filter((r) => isDateTodayVal(r.date) || isDateTodayVal(r.createdAt));
+
+      let computedTodayCash = todayReceiptsList
+        .filter((r) => r.paymentMethod?.toLowerCase() === "cash")
+        .reduce((sum, r) => sum + (r.amountPaid !== undefined ? r.amountPaid : r.total), 0);
+      let computedTodayTransfer = todayReceiptsList
+        .filter((r) => r.paymentMethod?.toLowerCase() === "transfer")
+        .reduce((sum, r) => sum + (r.amountPaid !== undefined ? r.amountPaid : r.total), 0);
+      let computedTodayCard = todayReceiptsList
+        .filter((r) => r.paymentMethod?.toLowerCase() === "card")
+        .reduce((sum, r) => sum + (r.amountPaid !== undefined ? r.amountPaid : r.total), 0);
+
+      try {
+        const cachedRepayments = await getDebtRepayments();
+        const todayRepayments = cachedRepayments.filter((rep) => isDateTodayVal(rep.date) || isDateTodayVal(rep.createdAt));
+        computedTodayCash += todayRepayments.filter((r) => r.paymentMethod?.toLowerCase() === 'cash').reduce((s, r) => s + r.amount, 0);
+        computedTodayTransfer += todayRepayments.filter((r) => r.paymentMethod?.toLowerCase() === 'transfer').reduce((s, r) => s + r.amount, 0);
+        computedTodayCard += todayRepayments.filter((r) => r.paymentMethod?.toLowerCase() === 'card').reduce((s, r) => s + r.amount, 0);
+      } catch {
+        // Silently continue
+      }
+
+      const activeDebtors = computeDebtorsSummary(receipts);
+      const computedOutstandingDebt = activeDebtors.reduce((sum, d) => sum + d.remainingBalance, 0);
+      const computedDebtorsCount = activeDebtors.length;
+      const computedOverdueCount = activeDebtors.filter((d) => d.isOverdue).length;
+
+      const effectiveTodaySales = metrics?.todaySales ?? todayReceiptsList.reduce((sum, r) => sum + r.total, 0);
+      if (effectiveTodaySales > 0 && computedTodayCash === 0 && computedTodayTransfer === 0 && computedTodayCard === 0) {
+        computedTodayCash = effectiveTodaySales;
+      }
+
+      if (metrics) {
+        metrics = {
+          ...metrics,
+          todayCash: metrics.todayCash !== undefined && metrics.todayCash > 0 ? metrics.todayCash : computedTodayCash,
+          todayTransfer: metrics.todayTransfer !== undefined && metrics.todayTransfer > 0 ? metrics.todayTransfer : computedTodayTransfer,
+          todayCard: metrics.todayCard !== undefined && metrics.todayCard > 0 ? metrics.todayCard : computedTodayCard,
+          totalDebtorsCount: metrics.totalDebtorsCount !== undefined ? metrics.totalDebtorsCount : computedDebtorsCount,
+          totalOutstandingDebt: metrics.totalOutstandingDebt !== undefined ? metrics.totalOutstandingDebt : computedOutstandingDebt,
+          overdueDebtorsCount: metrics.overdueDebtorsCount !== undefined ? metrics.overdueDebtorsCount : computedOverdueCount,
+        };
+      }
+
       // ─── Offline Fallback: Derive top products if empty ────────────────────
       if ((!topProducts || topProducts.length === 0) && products.length > 0) {
         topProducts = products.map((p) => {

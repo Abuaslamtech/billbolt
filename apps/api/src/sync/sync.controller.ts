@@ -21,10 +21,7 @@ export class SyncController {
    * Process offline batch sync payload atomically.
    */
   @Post()
-  async syncBatch(
-    @GetUser() user: JwtPayload,
-    @Body() dto: SyncBatchDto,
-  ) {
+  async syncBatch(@GetUser() user: JwtPayload, @Body() dto: SyncBatchDto) {
     const businessId = await resolveBusinessId(this.prisma, user);
     return this.syncService.syncBatch(dto, user.sub, businessId);
   }

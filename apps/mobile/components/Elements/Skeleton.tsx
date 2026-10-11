@@ -118,6 +118,8 @@ export function SkeletonText({
   );
 }
 
+import MetricCardShell from "@/components/MetricCardShell";
+
 // ── Domain-Specific Composite Skeletons ───────────────────────────────────────
 
 /**
@@ -126,46 +128,35 @@ export function SkeletonText({
  */
 export function TodayRevenueCardSkeleton() {
   return (
-    <View
-      className="bg-bolt-card rounded-2xl mb-3 border border-bolt-border overflow-hidden"
-      style={Shadows.cardElevated}
+    <MetricCardShell
+      shadowStyle={Shadows.cardElevated}
+      contentClassName="p-3.5"
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >
-      <LinearGradient
-        colors={[Colors.primaryDark, Colors.primary]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={{ height: 4, width: "100%" }}
-      />
-      <View className="p-4">
-        {/* Label & Growth pill */}
-        <View className="flex-row items-center justify-between mb-2">
-          <Skeleton width={110} height={14} className="rounded" />
-          <Skeleton width={64} height={20} className="rounded-full" />
+      {/* Label, Growth badge & Report placeholder */}
+      <View className="flex-row items-center justify-between mb-2">
+        <View className="flex-row items-center gap-2">
+          <Skeleton width={90} height={14} className="rounded" />
+          <Skeleton width={80} height={16} className="rounded-full" />
         </View>
+        <Skeleton width={45} height={14} className="rounded" />
+      </View>
 
-        {/* Hero Revenue Number */}
-        <View className="my-2">
-          <Skeleton width={180} height={32} className="rounded-lg" />
-        </View>
+      {/* Hero Revenue Number */}
+      <View className="my-1">
+        <Skeleton width={160} height={28} className="rounded-lg" />
+      </View>
 
-        {/* Subtitle count */}
-        <Skeleton width={120} height={12} className="rounded mb-4" />
-
-        {/* Bottom Comparative Pills (2-column ledger) */}
-        <View className="flex-row gap-2 pt-3 border-t border-bolt-divider">
-          <View className="flex-1 bg-bolt-surface p-2.5 rounded-xl border border-bolt-border/60 gap-1.5">
-            <Skeleton width={80} height={11} className="rounded" />
-            <Skeleton width={90} height={16} className="rounded" />
-          </View>
-          <View className="flex-1 bg-bolt-surface p-2.5 rounded-xl border border-bolt-border/60 gap-1.5">
-            <Skeleton width={80} height={11} className="rounded" />
-            <Skeleton width={90} height={16} className="rounded" />
-          </View>
+      {/* Baseline row: Receipts count & payment split */}
+      <View className="flex-row items-center justify-between pt-2.5 mt-2 border-t border-bolt-divider">
+        <Skeleton width={70} height={14} className="rounded" />
+        <View className="flex-row gap-1.5">
+          <Skeleton width={75} height={18} className="rounded-md" />
+          <Skeleton width={85} height={18} className="rounded-md" />
         </View>
       </View>
-    </View>
+    </MetricCardShell>
   );
 }
 

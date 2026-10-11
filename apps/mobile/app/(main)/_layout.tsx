@@ -1,22 +1,24 @@
+import React from "react";
 import { Shadows } from "@/lib/styles";
 import { Redirect, Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import Home01Icon from '@hugeicons/core-free-icons/Home01Icon';
-import Invoice01Icon from '@hugeicons/core-free-icons/Invoice01Icon';
-import Coins01Icon from '@hugeicons/core-free-icons/Coins01Icon';
-import Package01Icon from '@hugeicons/core-free-icons/Package01Icon';
-import Analytics01Icon from '@hugeicons/core-free-icons/Analytics01Icon';
+import Home01Icon from "@hugeicons/core-free-icons/Home01Icon";
+import Invoice01Icon from "@hugeicons/core-free-icons/Invoice01Icon";
+import Coins01Icon from "@hugeicons/core-free-icons/Coins01Icon";
+import Package01Icon from "@hugeicons/core-free-icons/Package01Icon";
+import Add01Icon from "@hugeicons/core-free-icons/Add01Icon";
 import * as Haptics from "expo-haptics";
 import { Colors } from "@/lib/colors";
 import { useAuthStore } from "@/store/authStore";
 import { useAppDataStore } from "@/store/AppDataStore";
+import { View, Text, TouchableOpacity } from "react-native";
 
 export default function MainLayout() {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const overdueDebtorsCount = useAppDataStore(
-    (state) => state.metrics?.overdueDebtorsCount || 0
+    (state) => state.metrics?.overdueDebtorsCount || 0,
   );
 
   // Defensive guard: user without a business must complete shop setup
@@ -29,14 +31,15 @@ export default function MainLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: "#9CA3AF",
+        tabBarInactiveTintColor: Colors.slate,
         tabBarStyle: {
-          backgroundColor: "#FFFFFF",
-          borderTopColor: "#F3F4F6",
+          backgroundColor: Colors.card,
+          borderTopColor: Colors.divider,
           borderTopWidth: 1,
           height: 60 + insets.bottom,
           paddingTop: 6,
           paddingBottom: Math.max(insets.bottom, 8),
+          overflow: "visible",
           ...Shadows.header,
         },
         tabBarLabelStyle: {
@@ -46,6 +49,7 @@ export default function MainLayout() {
         },
         tabBarItemStyle: {
           paddingVertical: 2,
+          overflow: "visible",
         },
       }}
       screenListeners={{
@@ -69,20 +73,63 @@ export default function MainLayout() {
           tabBarIcon: ({ color }) => (
             <HugeiconsIcon icon={Invoice01Icon} size={22} color={color} />
           ),
-          title: "Sales",
+          title: "Receipts",
         }}
       />
       <Tabs.Screen
-        name="CreditScreen"
+        name="sell"
         options={{
-          tabBarIcon: ({ color }) => (
-            <HugeiconsIcon icon={Coins01Icon} size={22} color={color} />
+          title: "Sell",
+          tabBarStyle: { display: "none" },
+          tabBarButton: ({ onPress }) => (
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={(e) => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                onPress?.(e);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Record a sale"
+              accessibilityHint="Opens the sales catalog to start a new sale transaction"
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "visible",
+              }}
+            >
+              <View
+                style={[
+                  Shadows.heroButton,
+                  {
+                    width: 56,
+                    height: 56,
+                    borderRadius: 28,
+                    backgroundColor: Colors.primary,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 3,
+                    borderColor: "#FFFFFF",
+                    position: "absolute",
+                    bottom: Math.max(insets.bottom, 8) + 8,
+                  },
+                ]}
+              >
+                <HugeiconsIcon icon={Add01Icon} size={26} color="#FFFFFF" />
+              </View>
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontFamily: "Inter_600SemiBold",
+                  color: Colors.primary,
+                  lineHeight: 13,
+                  marginTop: 18,
+                }}
+              >
+                Sell
+              </Text>
+            </TouchableOpacity>
           ),
-          title: "Credit",
-          tabBarBadge: overdueDebtorsCount > 0 ? overdueDebtorsCount : undefined,
-          tabBarBadgeStyle: {
-            backgroundColor: Colors.danger.text,
-          },
         }}
       />
       <Tabs.Screen
@@ -95,15 +142,19 @@ export default function MainLayout() {
         }}
       />
       <Tabs.Screen
-        name="ReportScreen"
+        name="CreditScreen"
         options={{
           tabBarIcon: ({ color }) => (
-            <HugeiconsIcon icon={Analytics01Icon} size={22} color={color} />
+            <HugeiconsIcon icon={Coins01Icon} size={22} color={color} />
           ),
-          title: "Reports",
+          title: "Debts",
+          tabBarBadge:
+            overdueDebtorsCount > 0 ? overdueDebtorsCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: Colors.danger.text,
+          },
         }}
       />
     </Tabs>
   );
 }
-

@@ -17,13 +17,10 @@ import { Colors } from "@/lib/colors";
 
 import Header from "@/components/Header";
 import TodayRevenueCard from "@/components/TodayRevenueCard";
-import ActionButtons from "@/components/ActionButtons";
 import ReceiptRow from "@/components/ReceiptRow";
 import { ReceiptRowSkeleton } from "@/components/Elements/Skeleton";
 import TopSellingProducts from "@/components/TopSellingProducts";
 import ReceiptDetailModal from "@/components/Receipts/ReceiptDetailModal";
-import BarcodeScannerModal from "@/components/Scanner/BarcodeScannerModal";
-import BusinessHealthCard from "@/components/Dashboard/BusinessHealthCard";
 import AppLockPrimerModal from "@/components/Elements/AppLockPrimerModal";
 import { useDashboardScreen } from "@/hooks/useDashboardScreen";
 import { Shadows } from "@/lib/styles";
@@ -32,8 +29,6 @@ export default function DashboardScreen() {
   const {
     isOnline,
     pendingCount,
-    isScannerOpen,
-    setIsScannerOpen,
     selectedReceipt,
     setSelectedReceipt,
     refreshing,
@@ -65,7 +60,7 @@ export default function DashboardScreen() {
             tintColor={Colors.primary}
           />
         }
-        contentContainerStyle={{ paddingBottom: 80 }}
+        contentContainerStyle={{ paddingBottom: 96 }}
       >
         <View className="px-4 pt-4">
 
@@ -83,21 +78,11 @@ export default function DashboardScreen() {
             />
           </Animated.View>
 
-          {/* ── Actions ──────────────────────────────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(80).duration(400).springify()}>
-          <ActionButtons
-            onRecordSale={() => router.push("/(sale)")}
-            onScanBarcode={() => setIsScannerOpen(true)}
-            onAddProduct={() => router.push("/add-product")}
-            onRestock={() => router.push("/restock")}
-          />
-          </Animated.View>
-
-          {/* ── Reorder Warning Banner ───────────────────────────────────── */}
+          {/* ── Reorder Warning Banner (Conditional) ────────────────────── */}
           {needReorder > 0 && (
-            <Animated.View entering={FadeInDown.delay(120).duration(400).springify()}>
+            <Animated.View entering={FadeInDown.delay(80).duration(400).springify()}>
             <TouchableOpacity
-              className="mt-3.5 mb-3 bg-bolt-warning-bg border border-bolt-warning-border rounded-2xl p-4 flex-row items-center justify-between"
+              className="mt-3.5 mb-1 bg-bolt-warning-bg border border-bolt-warning-border rounded-2xl p-4 flex-row items-center justify-between"
               onPress={() => router.navigate("/(main)/InventoryScreen")}
               activeOpacity={0.8}
               accessibilityRole="button"
@@ -124,18 +109,9 @@ export default function DashboardScreen() {
             </Animated.View>
           )}
 
-          {/* ── Business Health Card (Replaced AI Insights) ───────────────── */}
-          <Animated.View entering={FadeInDown.delay(160).duration(400).springify()}>
-          <BusinessHealthCard
-            metrics={metrics}
-            isOnline={isOnline}
-            pendingSyncCount={pendingCount}
-          />
-          </Animated.View>
-
           {/* ── Recent Sales List ────────────────────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(200).duration(400).springify()}>
-          <View className="mt-4 flex-row items-center justify-between mb-2">
+          <Animated.View entering={FadeInDown.delay(140).duration(400).springify()}>
+          <View className="mt-6 flex-row items-center justify-between mb-2.5">
             <View className="flex-row items-center gap-2">
               <View className="w-1.5 h-1.5 rounded-full bg-bolt-blue" />
               <Text className="text-xs font-inter-semibold text-bolt-graphite/80 uppercase tracking-wider">
@@ -174,7 +150,7 @@ export default function DashboardScreen() {
                   No sales recorded today
                 </Text>
                 <Text className="text-bolt-slate text-xs font-inter text-center mt-1">
-                  Tap &quot;Record a Sale&quot; above to log your first sale
+                  Tap &quot;Sell&quot; below to log your first sale
                 </Text>
               </View>
             ) : (
@@ -196,7 +172,7 @@ export default function DashboardScreen() {
           </Animated.View>
 
           {/* ── Top Selling Products ────────────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(240).duration(400).springify()}>
+          <Animated.View entering={FadeInDown.delay(200).duration(400).springify()}>
           <TopSellingProducts />
           </Animated.View>
 
@@ -208,17 +184,6 @@ export default function DashboardScreen() {
         receipt={selectedReceipt}
         visible={!!selectedReceipt}
         onClose={() => setSelectedReceipt(null)}
-      />
-      <BarcodeScannerModal
-        visible={isScannerOpen}
-        onClose={() => setIsScannerOpen(false)}
-        onProductScanned={(product) => {
-          setIsScannerOpen(false);
-          router.push({
-            pathname: "/(sale)",
-            params: { initialProductId: product.id },
-          });
-        }}
       />
       <AppLockPrimerModal
         visible={showPrimerModal}

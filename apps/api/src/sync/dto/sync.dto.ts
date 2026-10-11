@@ -229,4 +229,3 @@ export class SyncBatchDto {
   @Type(() => SyncRepaymentItemDto)
   repayments?: SyncRepaymentItemDto[];
 }
-

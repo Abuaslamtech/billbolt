@@ -131,7 +131,7 @@ export function useSaleCatalog() {
 
   const handleReviewSale = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push("/(sale)/checkout");
+    router.push("/(main)/sell/checkout");
   }, []);
 
   const handleProductScanned = useCallback(

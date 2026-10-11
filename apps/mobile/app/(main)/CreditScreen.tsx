@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -15,12 +14,12 @@ import CheckmarkCircle02Icon from "@hugeicons/core-free-icons/CheckmarkCircle02I
 import * as Haptics from "expo-haptics";
 
 import Header from "@/components/Header";
-import DebtSummaryCard from "@/components/Credit/DebtSummaryCard";
-import DebtorFilterTabs, { DebtorTabKey } from "@/components/Credit/DebtorFilterTabs";
-import DebtorSearchBar from "@/components/Credit/DebtorSearchBar";
+import DebtSummaryCard, { DebtorTabKey } from "@/components/Credit/DebtSummaryCard";
 import DebtorCard from "@/components/Credit/DebtorCard";
 import RecordPaymentModal from "@/components/Credit/RecordPaymentModal";
 import SendReminderModal from "@/components/Credit/SendReminderModal";
+import { Button } from "@/components/Elements/Button";
+import SearchBar from "@/components/Elements/SearchBar";
 
 import { Colors } from "@/lib/colors";
 import { useAppDataStore } from "@/store/AppDataStore";
@@ -53,7 +52,7 @@ export default function CreditScreen() {
   const handleRecordCreditSale = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setPaymentMethod("Credit");
-    router.push("/(sale)");
+    router.push("/(main)/sell");
   }, [setPaymentMethod]);
 
   // Tab counts
@@ -96,42 +95,36 @@ export default function CreditScreen() {
             tintColor={Colors.primary}
           />
         }
-        contentContainerStyle={{ paddingBottom: 80, paddingTop: 16 }}
+        contentContainerStyle={{ paddingBottom: 96, paddingTop: 16 }}
       >
-        {/* ── 1. Context First: High-Level Debt Summary Card ──────────────── */}
+        {/* ── 1. Context First: High-Level Debt Summary & Filter Card ─────── */}
         <DebtSummaryCard
           totalOutstanding={totalOutstanding}
           totalDebtors={totalDebtorsCount}
           overdueCount={overdueCount}
+          clearedCount={clearedDebtors.length}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
         />
 
         {/* ── 2. Action Second: Primary Hero Action (The One-Hero Rule) ────── */}
-        <TouchableOpacity
+        <Button
+          label="Record Sale on Credit"
+          icon={Add01Icon}
+          variant="primary"
+          size="md"
+          fullWidth
+          className="mb-4"
           onPress={handleRecordCreditSale}
-          activeOpacity={0.75}
-          className="bg-bolt-blue active:bg-bolt-primary-dark rounded-2xl py-3.5 px-4 flex-row items-center justify-center gap-2 mb-4"
-          accessibilityRole="button"
           accessibilityLabel="Record a sale on credit"
-        >
-          <HugeiconsIcon icon={Add01Icon} size={18} color={Colors.card} />
-          <Text className="font-poppins-semibold text-sm text-bolt-card">
-            Record Sale on Credit
-          </Text>
-        </TouchableOpacity>
+        />
 
         {/* ── 3. Filters & Search Bar ─────────────────────────────────────── */}
-        <DebtorSearchBar
+        <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="Search customer name or phone..."
-        />
-
-        <DebtorFilterTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          allCount={allDebtors.length}
-          overdueCount={overdueDebtors.length}
-          clearedCount={clearedDebtors.length}
+          containerClassName="mb-3"
         />
 
         {/* ── 4. Ledger Third: List of Debtor Cards ───────────────────────── */}

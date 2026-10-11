@@ -7,10 +7,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Header from "@/components/Header";
-import TodayRevenueCard from "@/components/TodayRevenueCard";
-import SaleActionRow from "@/components/SaleActionRow";
+import ReceiptsSummaryCard from "@/components/Receipts/ReceiptsSummaryCard";
 import ReceiptHistory from "@/components/ReceiptHistory";
-import BarcodeScannerModal from "@/components/Scanner/BarcodeScannerModal";
 import { Colors } from "@/lib/colors";
 import { useReceiptScreen } from "@/hooks/useReceiptScreen";
 
@@ -19,16 +17,11 @@ export default function ReceiptScreen() {
     refreshing,
     handleRefresh,
     todaySales,
-    yesterdaySales,
     todayReceiptsCount,
-    monthRevenue,
-    growth,
+    todayCash,
+    todayTransfer,
+    todayCard,
     isInitialLoading,
-    openRecordSaleScreen,
-    isScannerOpen,
-    openScanner,
-    closeScanner,
-    handleProductScanned,
   } = useReceiptScreen();
 
   return (
@@ -45,35 +38,24 @@ export default function ReceiptScreen() {
             tintColor={Colors.primary}
           />
         }
-        contentContainerStyle={{ paddingBottom: 80, paddingTop: 16 }}
+        contentContainerStyle={{ paddingBottom: 96, paddingTop: 16 }}
       >
-        <View className="gap-3.5">
-          {/* ── Today's Revenue Card (Context First — Identical DNA) ── */}
-          <TodayRevenueCard
+        <View className="gap-5">
+          {/* ── Signature Receipts Summary Card ── */}
+          <ReceiptsSummaryCard
             todaySales={todaySales}
-            receiptsToday={todayReceiptsCount}
-            yesterdaySales={yesterdaySales}
-            growth={growth}
+            receiptsCount={todayReceiptsCount}
+            todayCash={todayCash}
+            todayTransfer={todayTransfer}
+            todayCard={todayCard}
             loading={isInitialLoading}
-          />
-
-          {/* ── Record Sale & Scan CTA (Action Second) ────────────────── */}
-          <SaleActionRow
-            onRecordSale={openRecordSaleScreen}
-            onScanBarcode={openScanner}
           />
 
           {/* ── Sales History (Search, Filter, Receipt Records) ────────── */}
           <ReceiptHistory />
         </View>
       </ScrollView>
-
-      {/* Standalone Barcode Scanner */}
-      <BarcodeScannerModal
-        visible={isScannerOpen}
-        onClose={closeScanner}
-        onProductScanned={handleProductScanned}
-      />
     </SafeAreaView>
   );
 }
+

@@ -7,24 +7,26 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import Settings02Icon from '@hugeicons/core-free-icons/Settings02Icon';
 import CloudOffIcon from '@hugeicons/core-free-icons/CloudOffIcon';
 import CloudUploadIcon from '@hugeicons/core-free-icons/CloudUploadIcon';
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
-Modal,
+  Modal,
   Pressable,
   Text,
   TouchableOpacity,
   View,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
 import DropdownMenu from "./Elements/DropdownMenu";
 import Toast from "react-native-toast-message";
 import { Colors } from "@/lib/colors";
-
 import { Image } from 'expo-image';
+
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
-  "Jan","Feb","Mar","Apr","May","Jun",
-  "Jul","Aug","Sep","Oct","Nov","Dec",
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
 function getFormattedDate() {
@@ -33,10 +35,15 @@ function getFormattedDate() {
 }
 
 const Header = () => {
-  const userData = useAuthStore((state) => state.user);
-  const { businessInfo } = useAppDataStore();
-  const { isOnline, isSyncing, pendingCount } = useSyncStore();
+  const insets = useSafeAreaInsets();
   const [showGearMenu, setShowGearMenu] = useState(false);
+
+  // Atomic Zustand selectors to prevent unnecessary re-render storms
+  const userData = useAuthStore((state) => state.user);
+  const businessInfo = useAppDataStore((state) => state.businessInfo);
+  const isOnline = useSyncStore((state) => state.isOnline);
+  const isSyncing = useSyncStore((state) => state.isSyncing);
+  const pendingCount = useSyncStore((state) => state.pendingCount);
 
   const businessName =
     userData?.business?.name ||
@@ -44,16 +51,36 @@ const Header = () => {
     "My Business";
 
   const storeLogo = businessInfo?.logoUrl || userData?.business?.logoUrl;
+  const formattedDate = useMemo(() => getFormattedDate(), []);
 
-  const initials =
-    businessName
-      .trim()
-      .split(" ")
-      .map((w) => w.charAt(0).toUpperCase())
-      .slice(0, 2)
-      .join("") || "B";
+  const initials = useMemo(() => {
+    return (
+      businessName
+        .trim()
+        .split(" ")
+        .map((w) => w.charAt(0).toUpperCase())
+        .slice(0, 2)
+        .join("") || "B"
+    );
+  }, [businessName]);
 
-  const handleSyncPress = async () => {
+  const handleProfilePress = useCallback(() => {
+    Haptics.selectionAsync();
+    router.push("/StoreProfileScreen");
+  }, []);
+
+  const handleGearPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowGearMenu((prev) => !prev);
+  }, []);
+
+  const handleCloseMenu = useCallback(() => {
+    setShowGearMenu(false);
+  }, []);
+
+  const handleSyncPress = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     if (!isOnline) {
       Toast.show({
         type: "info",
@@ -80,19 +107,20 @@ const Header = () => {
       text2: `Saving ${pendingCount} sale${pendingCount === 1 ? "" : "s"} to the cloud.`,
     });
     await processSyncQueue();
-  };
+  }, [isOnline, isSyncing, pendingCount]);
 
   return (
     <View className="bg-bolt-card border-b border-bolt-border px-4 pt-3 pb-3">
       {/* Top Profile & Actions Row */}
-      <View className="flex-row items-center">
-        {/* Store Logo / Avatar */}
+      <View className="flex-row items-center justify-between">
+        {/* Unified Store Logo & Business Identity Hit Target */}
         <TouchableOpacity
-          onPress={() => router.push("/StoreProfileScreen")}
+          onPress={handleProfilePress}
           activeOpacity={0.7}
-          className="mr-3"
+          className="flex-row items-center flex-1 mr-3"
           accessibilityRole="button"
-          accessibilityLabel="Open store profile"
+          accessibilityLabel={`Store Profile: ${businessName}`}
+          accessibilityHint="Navigates to store settings and profile"
         >
           {storeLogo ? (
             <Image
@@ -105,43 +133,30 @@ const Header = () => {
               <Text className="text-white text-sm font-inter-bold">{initials}</Text>
             </View>
           )}
-        </TouchableOpacity>
 
-        {/* Name + date */}
-        <TouchableOpacity
-          onPress={() => router.push("/StoreProfileScreen")}
-          activeOpacity={0.8}
-          className="flex-1"
-        >
-          <Text
-            className="text-bolt-graphite text-lg font-poppins-bold"
-            numberOfLines={1}
-          >
-            {businessName}
-          </Text>
-          <Text className="text-bolt-slate text-xs font-inter mt-0.5">
-            {getFormattedDate()}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Account Tier + Settings */}
-        <View className="flex-row items-center gap-2">
-          <View className="bg-bolt-light border border-bolt-blue/20 rounded-full px-2.5 py-1">
-            <Text className="text-bolt-blue text-2xs font-inter-bold tracking-wider">
-              STARTER PLAN
+          <View className="ml-3 flex-1">
+            <Text
+              className="text-bolt-graphite text-lg font-poppins-bold"
+              numberOfLines={1}
+            >
+              {businessName}
+            </Text>
+            <Text className="text-bolt-slate text-xs font-inter mt-0.5">
+              {formattedDate}
             </Text>
           </View>
+        </TouchableOpacity>
 
-          {/* Settings gear + dropdown */}
-          <TouchableOpacity
-            className="w-8 h-8 rounded-full bg-bolt-divider items-center justify-center"
-            onPress={() => setShowGearMenu((v) => !v)}
-            accessibilityRole="button"
-            accessibilityLabel="Settings and account menu"
-          >
-            <HugeiconsIcon icon={Settings02Icon} size={16} color={Colors.slate} />
-          </TouchableOpacity>
-        </View>
+        {/* Settings gear trigger with generous accessible touch target */}
+        <TouchableOpacity
+          className="w-9 h-9 rounded-full bg-bolt-divider items-center justify-center active:bg-bolt-border"
+          onPress={handleGearPress}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Settings and account menu"
+        >
+          <HugeiconsIcon icon={Settings02Icon} size={18} color={Colors.slate} />
+        </TouchableOpacity>
       </View>
 
       {/* Prominent Offline / Sync Status Banner */}
@@ -203,28 +218,28 @@ const Header = () => {
         </TouchableOpacity>
       ) : null}
 
-      {/* Settings dropdown — rendered in a Modal so it floats above all content */}
+      {/* Settings dropdown anchored dynamically via safe area insets */}
       <Modal
         visible={showGearMenu}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowGearMenu(false)}
+        onRequestClose={handleCloseMenu}
       >
         {/* Full-screen dismiss backdrop */}
         <Pressable
           style={{ flex: 1 }}
-          onPress={() => setShowGearMenu(false)}
+          onPress={handleCloseMenu}
         >
-          {/* Dropdown pinned top-right */}
+          {/* Dropdown pinned top-right under the gear button */}
           <View
             style={{
               position: "absolute",
-              top: 60,
+              top: insets.top + 52,
               right: 16,
             }}
           >
             <Pressable onPress={(e) => e.stopPropagation()}>
-              <DropdownMenu onClose={() => setShowGearMenu(false)} />
+              <DropdownMenu onClose={handleCloseMenu} />
             </Pressable>
           </View>
         </Pressable>
@@ -233,4 +248,4 @@ const Header = () => {
   );
 };
 
-export default Header;
+export default React.memo(Header);

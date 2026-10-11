@@ -2,6 +2,7 @@ import useAuth from "@/hooks/useAuth";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import Store01Icon from '@hugeicons/core-free-icons/Store01Icon';
 import UserIcon from '@hugeicons/core-free-icons/UserIcon';
+import Analytics01Icon from '@hugeicons/core-free-icons/Analytics01Icon';
 import InformationCircleIcon from '@hugeicons/core-free-icons/InformationCircleIcon';
 import Logout01Icon from '@hugeicons/core-free-icons/Logout01Icon';
 import React from "react";
@@ -35,6 +36,12 @@ export default function DropdownMenu({ onClose }: DropdownMenuProps) {
       color: Colors.slate,
     },
     {
+      icon: Analytics01Icon,
+      label: "Business Reports",
+      onPress: () => navigate("/ReportScreen"),
+      color: Colors.slate,
+    },
+    {
       icon: UserIcon,
       label: "My Account",
       onPress: () => navigate("/AccountSettingsScreen"),
@@ -60,6 +67,16 @@ export default function DropdownMenu({ onClose }: DropdownMenuProps) {
       className="flex flex-col w-56 bg-bolt-card rounded-2xl border border-bolt-border overflow-hidden"
       style={Shadows.modal}
     >
+      {/* Account Tier Header */}
+      <View className="px-4 py-2.5 bg-bolt-surface border-b border-bolt-border flex-row items-center justify-between">
+        <Text className="text-2xs font-inter-semibold text-bolt-slate uppercase tracking-wider">
+          Plan
+        </Text>
+        <View className="bg-bolt-light border border-bolt-blue/20 rounded-full px-2 py-0.5">
+          <Text className="text-bolt-blue text-2xs font-inter-bold">Starter</Text>
+        </View>
+      </View>
+
       {menuItems.map((item, index) => (
         <View key={index}>
           {item.divider && (

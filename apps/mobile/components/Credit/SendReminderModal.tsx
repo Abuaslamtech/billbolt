@@ -13,6 +13,7 @@ import Cancel01Icon from "@hugeicons/core-free-icons/Cancel01Icon";
 import * as Haptics from "expo-haptics";
 import Toast from "react-native-toast-message";
 import { Colors } from "@/lib/colors";
+import { Button } from "@/components/Elements/Button";
 import { formatCurrency } from "@/store/saleStore";
 import { DebtorCustomerSummary } from "@/types/models";
 import { useAppDataStore } from "@/store/AppDataStore";
@@ -159,32 +160,24 @@ export default function SendReminderModal({
 
             {/* Action Buttons */}
             <View className="gap-2.5 mb-4">
-              {/* WhatsApp Button */}
-              <TouchableOpacity
+              <Button
+                label="Send via WhatsApp"
+                icon={Message01Icon}
+                variant="primary"
+                size="md"
+                fullWidth
                 onPress={handleOpenWhatsApp}
-                activeOpacity={0.75}
-                className="py-3.5 px-4 rounded-2xl bg-bolt-blue active:bg-bolt-primary-dark flex-row items-center justify-center gap-2"
-                accessibilityRole="button"
                 accessibilityLabel="Send reminder via WhatsApp"
-              >
-                <HugeiconsIcon icon={Message01Icon} size={18} color={Colors.card} />
-                <Text className="font-poppins-semibold text-sm text-bolt-card">
-                  Send via WhatsApp
-                </Text>
-              </TouchableOpacity>
+              />
 
-              {/* SMS Button */}
-              <TouchableOpacity
+              <Button
+                label="Send via SMS Text"
+                variant="secondary"
+                size="md"
+                fullWidth
                 onPress={handleOpenSMS}
-                activeOpacity={0.75}
-                className="py-3.5 px-4 rounded-2xl bg-bolt-surface border border-bolt-border flex-row items-center justify-center gap-2 active:bg-bolt-divider"
-                accessibilityRole="button"
                 accessibilityLabel="Send reminder via SMS"
-              >
-                <Text className="font-inter-semibold text-sm text-bolt-graphite">
-                  Send via SMS Text
-                </Text>
-              </TouchableOpacity>
+              />
             </View>
           </ScrollView>
         </View>

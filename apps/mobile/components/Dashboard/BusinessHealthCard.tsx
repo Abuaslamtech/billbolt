@@ -110,7 +110,7 @@ export default function BusinessHealthCard({
         <View className="w-px h-6 bg-bolt-divider mx-2" />
 
         <TouchableOpacity
-          onPress={() => router.navigate("/(main)/ReportScreen")}
+          onPress={() => router.navigate("/ReportScreen")}
           className="flex-row items-center gap-1 self-center py-1"
           activeOpacity={0.7}
           accessibilityRole="button"

@@ -11,11 +11,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
 import Add01Icon from '@hugeicons/core-free-icons/Add01Icon';
 import MinusSignIcon from '@hugeicons/core-free-icons/MinusSignIcon';
 import Delete02Icon from '@hugeicons/core-free-icons/Delete02Icon';
-import Search01Icon from '@hugeicons/core-free-icons/Search01Icon';
 import Package01Icon from '@hugeicons/core-free-icons/Package01Icon';
 import PackageReceiveIcon from '@hugeicons/core-free-icons/PackageReceiveIcon';
 import QrCode01Icon from '@hugeicons/core-free-icons/QrCode01Icon';
@@ -29,6 +27,7 @@ import BackButton from "@/components/Elements/BackButton";
 import BarcodeScannerModal from "@/components/Scanner/BarcodeScannerModal";
 import { QuantityPickerModal } from "@/components/Elements/QuantityPickerModal";
 import LoadingOverlay from "@/components/Elements/LoadingOverlay";
+import SearchBar from "@/components/Elements/SearchBar";
 import { Colors } from "@/lib/colors";
 import { formatCurrency, getCurrencySymbol } from "@/lib/formatters";
 import { useRestockScreen, RestockItem } from "@/hooks/useRestockScreen";
@@ -338,23 +337,11 @@ export default function RestockScreen() {
           </View>
 
           <View className="px-4 pt-3 pb-2">
-            <View className="flex-row items-center bg-bolt-card border border-bolt-border rounded-2xl px-3.5 h-12">
-              <HugeiconsIcon icon={Search01Icon} size={18} color={Colors.slate} />
-              <TextInput
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder="Search products..."
-                placeholderTextColor={Colors.slate}
-                className="flex-1 ml-2.5 font-inter text-sm text-bolt-graphite py-0"
-                returnKeyType="search"
-                clearButtonMode="while-editing"
-              />
-              {searchQuery ? (
-                <TouchableOpacity onPress={() => setSearchQuery("")}>
-                  <HugeiconsIcon icon={Cancel01Icon} size={16} color={Colors.slate} />
-                </TouchableOpacity>
-              ) : null}
-            </View>
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search products..."
+            />
           </View>
 
           {categories.length > 1 && (

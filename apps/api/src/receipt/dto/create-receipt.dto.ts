@@ -14,7 +14,12 @@ import {
 import { Type } from 'class-transformer';
 
 export const PAYMENT_METHODS = [
-  'Cash', 'Transfer', 'Card', 'Credit', 'Other'] as const;
+  'Cash',
+  'Transfer',
+  'Card',
+  'Credit',
+  'Other',
+] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export const PAYMENT_STATUSES = ['paid', 'unpaid', 'partially_paid'] as const;

@@ -15,6 +15,7 @@ import FlashIcon from "@hugeicons/core-free-icons/FlashIcon";
 import * as Haptics from "expo-haptics";
 import Toast from "react-native-toast-message";
 import { Colors } from "@/lib/colors";
+import { Button } from "@/components/Elements/Button";
 import { formatCurrency } from "@/store/saleStore";
 import { DebtorCustomerSummary } from "@/types/models";
 import { useAppDataStore } from "@/store/AppDataStore";
@@ -220,24 +221,22 @@ function RecordPaymentContent({ debtor, onClose }: RecordPaymentContentProps) {
             </View>
 
             {/* Confirm CTA */}
-            <TouchableOpacity
-              onPress={handleSubmit}
-              disabled={isSubmitting || parsedAmount <= 0}
-              className={`py-4 rounded-2xl flex-row items-center justify-center gap-2 mb-4 ${
-                parsedAmount > 0 && !isSubmitting
-                  ? "bg-bolt-blue active:bg-bolt-primary-dark"
-                  : "bg-bolt-disabled"
-              }`}
-              accessibilityRole="button"
-              accessibilityLabel={`Confirm payment of ${formatCurrency(parsedAmount)}`}
-            >
-              <HugeiconsIcon icon={FlashIcon} size={18} color={Colors.card} />
-              <Text className="font-poppins-semibold text-sm text-bolt-card">
-                {isSubmitting
+            <Button
+              label={
+                isSubmitting
                   ? "Recording..."
-                  : `Confirm Payment • ${formatCurrency(parsedAmount)}`}
-              </Text>
-            </TouchableOpacity>
+                  : `Confirm Payment • ${formatCurrency(parsedAmount)}`
+              }
+              icon={FlashIcon}
+              variant="primary"
+              size="lg"
+              fullWidth
+              loading={isSubmitting}
+              disabled={isSubmitting || parsedAmount <= 0}
+              className="mb-4"
+              onPress={handleSubmit}
+              accessibilityLabel={`Confirm payment of ${formatCurrency(parsedAmount)}`}
+            />
           </ScrollView>
         </View>
       </KeyboardAvoidingView>

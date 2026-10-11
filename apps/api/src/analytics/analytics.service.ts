@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
-import { cycleKey, formatYMD, parseDateSafe } from 'src/common/utils/cycle.utils';
+import {
+  cycleKey,
+  formatYMD,
+  parseDateSafe,
+} from 'src/common/utils/cycle.utils';
 
 @Injectable()
 export class AnalyticsService {
@@ -23,6 +27,7 @@ export class AnalyticsService {
       products,
       restockGroups,
       saleGroups,
+      paymentMethodGroups,
     ] = await Promise.all([
       this.prisma.receipt.aggregate({
         where: { businessId, date: todayStr, isDeleted: false },
@@ -58,7 +63,23 @@ export class AnalyticsService {
         where: { businessId },
         _sum: { qty: true },
       }),
+      this.prisma.receipt.groupBy({
+        by: ['paymentMethod'],
+        where: { businessId, date: todayStr, isDeleted: false },
+        _sum: { amountPaid: true, total: true },
+      }),
     ]);
+
+    // Payment breakdown
+    let todayCash = 0;
+    let todayTransfer = 0;
+    let todayCard = 0;
+    for (const group of paymentMethodGroups) {
+      const amount = group._sum.amountPaid ?? group._sum.total ?? 0;
+      if (group.paymentMethod === 'Cash') todayCash += amount;
+      else if (group.paymentMethod === 'Transfer') todayTransfer += amount;
+      else if (group.paymentMethod === 'Card') todayCard += amount;
+    }
 
     // Today's sales
     const todaySales = todayReceiptAgg._sum.total ?? 0;
@@ -109,6 +130,9 @@ export class AnalyticsService {
       totalCustomersCount,
       needReorderCount,
       outOfStockCount,
+      todayCash,
+      todayTransfer,
+      todayCard,
       currentCycle,
     };
   }

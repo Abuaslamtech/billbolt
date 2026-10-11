@@ -16,7 +16,7 @@ import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02I
 import Alert02Icon from '@hugeicons/core-free-icons/Alert02Icon';
 import HelpCircleIcon from '@hugeicons/core-free-icons/HelpCircleIcon';
 
-import Header from "@/components/Header";
+import ScreenHeader from "@/components/Elements/ScreenHeader";
 import { ReportScreenSkeleton } from "@/components/Elements/Skeleton";
 import { useAppDataStore } from "@/store/AppDataStore";
 import { getCurrencySymbol } from "@/lib/formatters";
@@ -57,7 +57,12 @@ export default function ReportScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-bolt-surface" edges={["top", "left", "right"]}>
-      <Header />
+      <ScreenHeader
+        title="Business Reports"
+        subtitle="Earnings, profit margins & sales trends"
+        showBack={true}
+        showHome={true}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -69,17 +74,8 @@ export default function ReportScreen() {
             tintColor={Colors.primary}
           />
         }
-        contentContainerStyle={{ paddingBottom: 80, paddingTop: 16 }}
+        contentContainerStyle={{ paddingBottom: 80, paddingTop: 12 }}
       >
-        {/* ── Screen Title ─────────────────────────────────────────────── */}
-        <View className="mb-3.5">
-          <Text className="font-poppins-bold text-lg text-bolt-graphite">
-            Reports
-          </Text>
-          <Text className="font-inter text-xs text-bolt-slate mt-0.5">
-            Your earnings, spending, and best-selling products
-          </Text>
-        </View>
 
         {/* ── 1. Time Picker (Merchant Rhythm) ─────────────────────────── */}
         <View className="flex-row bg-bolt-card p-1 rounded-2xl border border-bolt-border mb-3.5">

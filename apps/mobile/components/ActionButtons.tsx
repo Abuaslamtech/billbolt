@@ -1,13 +1,10 @@
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
-import { HugeiconsIcon } from "@hugeicons/react-native";
-import PackageAdd01Icon from '@hugeicons/core-free-icons/PackageAdd01Icon';
-import PackageReceiveIcon from '@hugeicons/core-free-icons/PackageReceiveIcon';
-import * as Haptics from "expo-haptics";
-import { Colors } from "@/lib/colors";
+import { View } from "react-native";
+import PackageAdd01Icon from "@hugeicons/core-free-icons/PackageAdd01Icon";
+import PackageReceiveIcon from "@hugeicons/core-free-icons/PackageReceiveIcon";
 
 import SaleActionRow from "@/components/SaleActionRow";
-import { Shadows } from "@/lib/styles";
+import { Button } from "@/components/Elements/Button";
 
 interface Props {
   onRecordSale: () => void;
@@ -24,56 +21,36 @@ export default function ActionButtons({
 }: Props) {
   return (
     <View className="mb-3">
-      {/* Primary CTA Row — Selling (Reused SaleActionRow Component) */}
+      {/* Primary CTA Row — Selling */}
       <View className="mb-2.5">
         <SaleActionRow onRecordSale={onRecordSale} onScanBarcode={onScanBarcode} />
       </View>
 
-      {/* Secondary Row — Inventory Operations (Add New Item + Restock Items) */}
+      {/* Secondary Row — Inventory Operations */}
       <View className="flex-row gap-2.5">
-        <TouchableOpacity
-          className="flex-1 flex-row items-center justify-center gap-2 bg-bolt-card border border-bolt-border rounded-xl min-h-[56px] py-3 px-2"
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onAddProduct();
-          }}
-          activeOpacity={0.75}
-          accessibilityRole="button"
-          accessibilityLabel="Add new product to inventory"
-          style={Shadows.card}
-        >
-          <HugeiconsIcon icon={PackageAdd01Icon} size={16} color={Colors.primary} />
-          <Text
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.85}
-            className="text-bolt-graphite text-xs font-inter-semibold text-center"
-          >
-            Add New Product
-          </Text>
-        </TouchableOpacity>
+        <View className="flex-1">
+          <Button
+            label="Add New Product"
+            icon={PackageAdd01Icon}
+            variant="secondary"
+            size="lg"
+            fullWidth
+            onPress={onAddProduct}
+            accessibilityLabel="Add new product to inventory"
+          />
+        </View>
 
-        <TouchableOpacity
-          className="flex-1 flex-row items-center justify-center gap-2 bg-bolt-card border border-bolt-border rounded-xl min-h-[56px] py-3 px-2"
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onRestock();
-          }}
-          activeOpacity={0.75}
-          accessibilityRole="button"
-          accessibilityLabel="Restock existing inventory items"
-          style={Shadows.card}
-        >
-          <HugeiconsIcon icon={PackageReceiveIcon} size={16} color={Colors.primary} />
-          <Text
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.85}
-            className="text-bolt-graphite text-xs font-inter-semibold text-center"
-          >
-            Restock Items
-          </Text>
-        </TouchableOpacity>
+        <View className="flex-1">
+          <Button
+            label="Restock Items"
+            icon={PackageReceiveIcon}
+            variant="secondary"
+            size="lg"
+            fullWidth
+            onPress={onRestock}
+            accessibilityLabel="Restock existing inventory items"
+          />
+        </View>
       </View>
     </View>
   );
