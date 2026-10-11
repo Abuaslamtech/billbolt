@@ -1,5 +1,9 @@
-import React from 'react';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { RefreshCw, AlertCircle, Package, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { PageHeader } from '../components/ui/PageHeader';
+import { StatCard } from '../components/ui/StatCard';
+import { TableToolbar } from '../components/ui/TableToolbar';
+import { TablePagination } from '../components/ui/TablePagination';
 import { CatalogTable } from '../components/Inventory/CatalogTable';
 import { Button } from '../components/Elements/Button';
 import { useInventoryScreen } from '../hooks/useInventoryScreen';
@@ -10,25 +14,55 @@ export interface InventoryScreenProps {
 }
 
 export const InventoryScreen: React.FC<InventoryScreenProps> = ({
-  searchQuery = '',
+  searchQuery: initialSearch = '',
 }) => {
+  const [search, setSearch] = useState(initialSearch);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 12;
+
   const {
     products,
     totalCount,
     lowStockCount,
     outOfStockCount,
+    inStockCount,
+    statusFilter,
+    setStatusFilter,
     isLoading,
     error,
     refetch,
-  } = useInventoryScreen(searchQuery);
+  } = useInventoryScreen(search);
+
+  // Pagination slice
+  const paginatedProducts = products.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Page Header */}
+      <PageHeader
+        title="Inventory &amp; SKU Catalog"
+        subtitle="Network inventory health, product SKUs, stock levels, reorder thresholds, and pricing consistency."
+        badge={`${totalCount} SKUs`}
+        actions={
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />}
+            onClick={refetch}
+          >
+            Refresh Catalog
+          </Button>
+        }
+      />
+
       {/* Error Alert */}
       {error && (
-        <div className="p-4 rounded-xl bg-bolt-danger-bg border border-bolt-danger-border flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-bolt-danger-bg border border-bolt-danger-border flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-bolt-danger-text flex-shrink-0" />
+            <AlertCircle className="w-5 h-5 text-bolt-danger-text shrink-0" />
             <p className="text-xs font-semibold text-bolt-danger-text">{error}</p>
           </div>
           <Button variant="secondary" size="sm" onClick={refetch}>
@@ -37,52 +71,83 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({
         </div>
       )}
 
-      {/* Overview Cards with Real Backend Counts */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-bolt-border">
-          <span className="text-2xs font-bold uppercase tracking-wider text-bolt-slate">
-            Total Monitored SKUs
-          </span>
-          <div className="font-poppins font-bold text-2xl text-bolt-graphite mt-1">
-            {formatNumber(totalCount)}
-          </div>
-          <p className="text-xs text-bolt-slate mt-1">Active products in catalog</p>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-white border border-bolt-border">
-          <span className="text-2xs font-bold uppercase tracking-wider text-bolt-slate">
-            Low Stock Warnings
-          </span>
-          <div className="font-poppins font-bold text-2xl text-bolt-warning-text mt-1">
-            {formatNumber(lowStockCount)}
-          </div>
-          <p className="text-xs text-bolt-slate mt-1">Items at or below reorder level</p>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-white border border-bolt-border">
-          <span className="text-2xs font-bold uppercase tracking-wider text-bolt-slate">
-            Out of Stock Items
-          </span>
-          <div className="font-poppins font-bold text-2xl text-bolt-danger-text mt-1">
-            {formatNumber(outOfStockCount)}
-          </div>
-          <p className="text-xs text-bolt-slate mt-1">Items with zero remaining inventory</p>
-        </div>
+      {/* 4-Card Responsive KPI Stat Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Total SKUs"
+          value={formatNumber(totalCount)}
+          subtext="Indexed product catalog items"
+          icon={Package}
+          iconBg="bg-blue-50"
+          iconColor="text-bolt-blue"
+          borderColor="border-blue-200/80"
+          isLoading={isLoading}
+        />
+        <StatCard
+          title="In Stock"
+          value={formatNumber(inStockCount)}
+          subtext="Adequate stock on merchant shelves"
+          icon={CheckCircle2}
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-600"
+          borderColor="border-emerald-200/80"
+          isLoading={isLoading}
+        />
+        <StatCard
+          title="Low Stock"
+          value={formatNumber(lowStockCount)}
+          subtext="Items below reorder thresholds"
+          icon={AlertTriangle}
+          iconBg="bg-amber-50"
+          iconColor="text-amber-600"
+          borderColor="border-amber-200/80"
+          isLoading={isLoading}
+        />
+        <StatCard
+          title="Depleted Units"
+          value={formatNumber(outOfStockCount)}
+          subtext="Items requiring restock"
+          icon={XCircle}
+          iconBg="bg-rose-50"
+          iconColor="text-rose-600"
+          borderColor="border-rose-200/80"
+          isLoading={isLoading}
+        />
       </div>
 
-      <div className="flex justify-end">
-        <Button
-          variant="secondary"
-          size="sm"
-          icon={<RefreshCw className={`w-3.5 h-3.5 text-bolt-slate ${isLoading ? 'animate-spin' : ''}`} />}
-          onClick={refetch}
-        >
-          Refresh Products
-        </Button>
-      </div>
+      {/* Filter Toolbar */}
+      <TableToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search product name, category, or barcode..."
+        tabs={[
+          { label: 'All SKUs', value: 'ALL', count: totalCount },
+          { label: 'In Stock', value: 'In Stock' },
+          { label: 'Low Stock', value: 'Low Stock' },
+          { label: 'Out of Stock', value: 'Out of Stock' },
+        ]}
+        activeTab={statusFilter}
+        onTabChange={(tab) => setStatusFilter(tab as any)}
+      />
 
-      {/* Catalog Table */}
-      <CatalogTable products={products} isLoading={isLoading} />
+      {/* Inventory Catalog Table */}
+      <div className="bg-white rounded-3xl border border-bolt-border shadow-2xs overflow-hidden">
+        <CatalogTable
+          products={paginatedProducts}
+          isLoading={isLoading}
+        />
+
+        {/* Table Pagination Footer */}
+        <TablePagination
+          currentPage={currentPage}
+          totalItems={products.length}
+          pageSize={pageSize}
+          onPrevPage={() => setCurrentPage((p) => Math.max(1, p - 1))}
+          onNextPage={() => setCurrentPage((p) => p + 1)}
+          canPrevPage={currentPage > 1}
+          canNextPage={currentPage * pageSize < products.length}
+        />
+      </div>
     </div>
   );
 };

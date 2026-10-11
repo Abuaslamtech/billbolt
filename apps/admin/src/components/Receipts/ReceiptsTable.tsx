@@ -1,7 +1,6 @@
-import { Banknote, CreditCard, Smartphone } from 'lucide-react';
-import receiptsImage from '../../assets/images/receipts.png';
-import { formatCurrency } from '../../lib/formatters';
-import { Button } from '../Elements/Button';
+import React from 'react';
+import { Receipt, ChevronRight, Banknote, Smartphone, CreditCard } from 'lucide-react';
+import { formatCurrency, formatShortDate } from '../../lib/formatters';
 import type { ReceiptResponse } from '../../types/models';
 
 export interface ReceiptsTableProps {
@@ -15,86 +14,132 @@ export const ReceiptsTable: React.FC<ReceiptsTableProps> = ({
   isLoading = false,
   onViewReceipt,
 }) => {
+  const getMethodBadge = (method: string) => {
+    const m = method?.toLowerCase() || '';
+    if (m.includes('transfer')) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+          <Smartphone className="w-3 h-3 text-bolt-blue" /> Transfer
+        </span>
+      );
+    }
+    if (m.includes('card') || m.includes('pos')) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+          <CreditCard className="w-3 h-3 text-purple-600" /> Card
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <Banknote className="w-3 h-3 text-emerald-600" /> Cash
+      </span>
+    );
+  };
+
   return (
-    <div className="rounded-2xl bg-white border border-bolt-border overflow-hidden shadow-2xs">
+    <div className="bg-white rounded-3xl border border-bolt-border shadow-2xs overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-bolt-surface/80 border-b border-bolt-border text-bolt-slate font-semibold uppercase tracking-wider text-2xs">
-            <tr>
-              <th className="py-3.5 px-5">Receipt ID</th>
-              <th className="py-3.5 px-5">Customer</th>
-              <th className="py-3.5 px-5">Items</th>
-              <th className="py-3.5 px-5">Total Amount</th>
-              <th className="py-3.5 px-5">Payment Method</th>
-              <th className="py-3.5 px-5">Date</th>
-              <th className="py-3.5 px-5 text-right">Action</th>
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-bolt-surface/60 border-b border-bolt-border text-[11px] font-bold text-bolt-slate uppercase tracking-wider">
+              <th className="py-4 px-6">Receipt ID</th>
+              <th className="py-4 px-6">Customer</th>
+              <th className="py-4 px-6">Store / Merchant</th>
+              <th className="py-4 px-6 text-center">Items</th>
+              <th className="py-4 px-6 text-right">Amount Paid</th>
+              <th className="py-4 px-6 text-center">Payment Rail</th>
+              <th className="py-4 px-6 text-right">Issued Date</th>
+              <th className="py-4 px-6 text-right">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-bolt-border">
+          <tbody className="divide-y divide-bolt-border text-xs font-medium">
             {isLoading ? (
-              <tr>
-                <td colSpan={7} className="py-12 text-center text-bolt-slate">
-                  <div className="w-6 h-6 border-2 border-bolt-blue border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                  <p className="font-medium text-xs">Loading receipts...</p>
-                </td>
-              </tr>
+              Array.from({ length: 5 }).map((_, idx) => (
+                <tr key={idx} className="animate-pulse">
+                  <td className="py-4 px-6"><div className="h-4 w-28 bg-bolt-slate/15 rounded" /></td>
+                  <td className="py-4 px-6"><div className="h-4 w-32 bg-bolt-slate/15 rounded mb-1" /><div className="h-3 w-20 bg-bolt-slate/10 rounded" /></td>
+                  <td className="py-4 px-6"><div className="h-4 w-24 bg-bolt-slate/15 rounded" /></td>
+                  <td className="py-4 px-6 text-center"><div className="h-4 w-12 bg-bolt-slate/15 rounded mx-auto" /></td>
+                  <td className="py-4 px-6 text-right"><div className="h-4 w-20 bg-bolt-slate/15 rounded ml-auto" /></td>
+                  <td className="py-4 px-6 text-center"><div className="h-5 w-20 bg-bolt-slate/15 rounded-full mx-auto" /></td>
+                  <td className="py-4 px-6 text-right"><div className="h-4 w-20 bg-bolt-slate/15 rounded ml-auto" /></td>
+                  <td className="py-4 px-6 text-right"><div className="h-7 w-16 bg-bolt-slate/15 rounded-lg ml-auto" /></td>
+                </tr>
+              ))
             ) : receipts.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-12 text-center text-bolt-slate">
-                  <img
-                    src={receiptsImage}
-                    alt="Receipts"
-                    className="w-16 h-16 mx-auto object-contain mb-3 opacity-80"
-                  />
-                  <p className="font-semibold text-xs text-bolt-graphite">No receipts found</p>
-                  <p className="text-2xs text-bolt-slate">Transactions issued will appear in this ledger.</p>
+                <td colSpan={8} className="py-16 text-center">
+                  <div className="w-12 h-12 rounded-2xl bg-bolt-surface flex items-center justify-center text-bolt-slate mx-auto mb-3 border border-bolt-border">
+                    <Receipt className="w-6 h-6" />
+                  </div>
+                  <p className="font-bold text-sm text-bolt-graphite">No transaction receipts found</p>
+                  <p className="text-xs text-bolt-slate mt-1 max-w-sm mx-auto">
+                    Transactions generated by merchant point-of-sale will display here.
+                  </p>
                 </td>
               </tr>
             ) : (
-              receipts.map((sale) => (
-                <tr key={sale.id} className="hover:bg-bolt-surface/60 transition-colors">
-                  <td className="py-4 px-5 font-mono font-semibold text-bolt-blue">
-                    {sale.receiptNumber}
+              receipts.map((receipt) => (
+                <tr
+                  key={receipt.id}
+                  onClick={() => onViewReceipt?.(receipt)}
+                  className="hover:bg-bolt-surface/60 transition-colors cursor-pointer group"
+                >
+                  {/* Receipt Number */}
+                  <td className="py-4 px-6 font-mono font-bold text-bolt-blue text-xs">
+                    {receipt.receiptNumber}
                   </td>
-                  <td className="py-4 px-5">
-                    <div className="font-semibold text-bolt-graphite">
-                      {sale.customerName || 'Walk-in Customer'}
-                    </div>
-                    {sale.customerPhone && (
-                      <div className="text-2xs text-bolt-slate">{sale.customerPhone}</div>
+
+                  {/* Customer */}
+                  <td className="py-4 px-6">
+                    <p className="font-bold text-bolt-graphite truncate">
+                      {receipt.customerName || 'Walk-in Customer'}
+                    </p>
+                    {receipt.customerPhone && (
+                      <p className="text-[11px] text-bolt-slate font-mono font-normal">
+                        {receipt.customerPhone}
+                      </p>
                     )}
                   </td>
-                  <td className="py-4 px-5 text-bolt-slate font-medium">
-                    {sale.items?.length ?? 1} {(sale.items?.length ?? 1) === 1 ? 'item' : 'items'}
-                  </td>
-                  <td className="py-4 px-5 font-poppins font-bold text-bolt-graphite text-sm">
-                    {formatCurrency(sale.total)}
-                  </td>
-                  <td className="py-4 px-5">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-2xs font-semibold bg-bolt-surface border border-bolt-border text-bolt-graphite">
-                      {sale.paymentMethod?.toLowerCase() === 'cash' && (
-                        <Banknote className="w-3 h-3 text-bolt-mint" />
-                      )}
-                      {sale.paymentMethod?.toLowerCase() === 'transfer' && (
-                        <Smartphone className="w-3 h-3 text-bolt-blue" />
-                      )}
-                      {sale.paymentMethod?.toLowerCase() === 'card' && (
-                        <CreditCard className="w-3 h-3 text-bolt-yellow" />
-                      )}
-                      {sale.paymentMethod || 'Cash'}
+
+                  {/* Merchant Entity */}
+                  <td className="py-4 px-6 text-bolt-slate">
+                    <span className="font-semibold text-bolt-graphite">
+                      {(receipt as any).business?.name || 'Main Merchant'}
                     </span>
                   </td>
-                  <td className="py-4 px-5 text-bolt-slate text-2xs">
-                    {sale.date || new Date(sale.createdAt).toLocaleDateString()}
+
+                  {/* Items Count */}
+                  <td className="py-4 px-6 text-center">
+                    <span className="font-bold text-bolt-graphite">
+                      {receipt.items?.length ?? 1}
+                    </span>{' '}
+                    <span className="text-[11px] text-bolt-slate">
+                      {(receipt.items?.length ?? 1) === 1 ? 'item' : 'items'}
+                    </span>
                   </td>
-                  <td className="py-4 px-5 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onViewReceipt?.(sale)}
-                    >
-                      View
-                    </Button>
+
+                  {/* Total Amount */}
+                  <td className="py-4 px-6 text-right font-black text-bolt-graphite text-sm tracking-tight">
+                    {formatCurrency(receipt.total)}
+                  </td>
+
+                  {/* Payment Rail */}
+                  <td className="py-4 px-6 text-center">
+                    {getMethodBadge(receipt.paymentMethod)}
+                  </td>
+
+                  {/* Date */}
+                  <td className="py-4 px-6 text-right text-[11px] text-bolt-slate font-mono">
+                    {formatShortDate(receipt.createdAt || receipt.date)}
+                  </td>
+
+                  {/* Action */}
+                  <td className="py-4 px-6 text-right">
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-bolt-blue group-hover:translate-x-0.5 transition-transform">
+                      View <ChevronRight className="w-3.5 h-3.5" />
+                    </span>
                   </td>
                 </tr>
               ))

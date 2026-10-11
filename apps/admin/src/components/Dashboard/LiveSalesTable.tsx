@@ -29,9 +29,22 @@ export const LiveSalesTable: React.FC<LiveSalesTableProps> = ({
       </div>
 
       {isLoading ? (
-        <div className="p-12 text-center text-bolt-slate">
-          <div className="w-6 h-6 border-2 border-bolt-blue border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-xs font-medium">Fetching real-time receipts...</p>
+        <div className="divide-y divide-bolt-border">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <div key={idx} className="p-4 flex items-center justify-between animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-bolt-slate/15 shrink-0" />
+                <div>
+                  <div className="h-4 w-28 bg-bolt-slate/15 rounded-md mb-1.5" />
+                  <div className="h-3 w-36 bg-bolt-slate/10 rounded-md" />
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="h-4 w-20 bg-bolt-slate/15 rounded-md mb-1.5 ml-auto" />
+                <div className="h-3 w-14 bg-bolt-slate/10 rounded-md ml-auto" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : receipts.length === 0 ? (
         <div className="p-12 text-center text-bolt-slate">

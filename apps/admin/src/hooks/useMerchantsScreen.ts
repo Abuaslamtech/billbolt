@@ -1,14 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../lib/apiClient';
-import type { BusinessResponse, UserResponse } from '../types/models';
-
-export interface StoreItem {
-  id: string;
-  name: string;
-  location?: string | null;
-  isDefault: boolean;
-  createdAt: string;
-}
 
 export interface MerchantOverview {
   id: string;
@@ -20,71 +12,101 @@ export interface MerchantOverview {
   currency: string;
   ownerName: string;
   ownerEmail: string;
+  ownerPhone?: string | null;
   ownerRole: string;
-  stores: StoreItem[];
+  storesCount: number;
+  productsCount: number;
+  receiptsCount: number;
+  totalRevenue: number;
   createdAt: string;
+  status: 'ACTIVE' | 'PENDING';
+  stores?: { id: string; name: string; location?: string | null; isDefault?: boolean }[];
 }
 
 export function useMerchantsScreen(searchQuery: string = '') {
-  const [merchants, setMerchants] = useState<MerchantOverview[]>([]);
   const [selectedMerchant, setSelectedMerchant] = useState<MerchantOverview | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [tierFilter, setTierFilter] = useState<'ALL' | 'ACTIVE' | 'VERIFIED'>('ALL');
 
-  const fetchMerchants = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const [business, stores, user] = await Promise.all([
-        apiClient.get<BusinessResponse>('/business/me'),
-        apiClient.get<StoreItem[]>('/stores').catch(() => []),
-        apiClient.get<UserResponse>('/users/me').catch(() => null),
-      ]);
-
-      if (business) {
-        const item: MerchantOverview = {
-          id: business.id,
-          name: business.name,
-          type: business.type,
-          address: business.address,
-          phone: business.phone || user?.phone,
-          email: business.email || user?.email,
-          currency: business.currency || '₦',
-          ownerName: user?.fullName || 'Business Owner',
-          ownerEmail: user?.email || '',
-          ownerRole: user?.role || 'ADMIN',
-          stores: Array.isArray(stores) ? stores : [],
-          createdAt: business.createdAt,
-        };
-        setMerchants([item]);
-      } else {
-        setMerchants([]);
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['admin', 'merchants', { search: searchQuery }],
+    queryFn: async () => {
+      // 1. Try dedicated Admin Module endpoint
+      try {
+        const adminRes = await apiClient.get<any>(
+          `/admin/merchants?search=${encodeURIComponent(searchQuery)}`
+        );
+        if (adminRes && Array.isArray(adminRes.items)) {
+          return adminRes.items.map((b: any) => ({
+            id: b.id,
+            name: b.name,
+            type: b.type,
+            address: b.address,
+            phone: b.phone || b.owner?.phone,
+            email: b.email || b.owner?.email,
+            currency: b.currency || '₦',
+            ownerName: b.owner?.fullName || 'Business Owner',
+            ownerEmail: b.owner?.email || '',
+            ownerPhone: b.owner?.phone || '',
+            ownerRole: b.owner?.role || 'USER',
+            storesCount: b._count?.stores ?? 1,
+            productsCount: b._count?.products ?? 0,
+            receiptsCount: b._count?.receipts ?? 0,
+            totalRevenue: b.totalRevenue ?? 0,
+            createdAt: b.createdAt,
+            status: 'ACTIVE' as const,
+          }));
+        }
+      } catch {
+        // Fallback for pre-deployment
       }
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load merchant profile from backend');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
-  useEffect(() => {
-    fetchMerchants();
-  }, [fetchMerchants]);
+      // 2. Fallback to /business/me
+      try {
+        const business = await apiClient.get<any>('/business/me');
+        if (business && business.id) {
+          return [
+            {
+              id: business.id,
+              name: business.name,
+              type: business.type,
+              address: business.address,
+              phone: business.phone,
+              email: business.email,
+              currency: business.currency || '₦',
+              ownerName: 'Current Account',
+              ownerEmail: business.email || '',
+              ownerPhone: business.phone || '',
+              ownerRole: 'ADMIN',
+              storesCount: 1,
+              productsCount: 0,
+              receiptsCount: 0,
+              totalRevenue: 0,
+              createdAt: business.createdAt,
+              status: 'ACTIVE' as const,
+            },
+          ];
+        }
+      } catch {
+        // empty
+      }
 
-  const filteredMerchants = merchants.filter((m) => {
-    return (
-      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (m.phone && m.phone.includes(searchQuery))
-    );
+      return [] as MerchantOverview[];
+    },
+    refetchInterval: 1000 * 30,
   });
 
+  const merchants = data || [];
+
   return {
-    merchants: filteredMerchants,
+    merchants,
     selectedMerchant,
     setSelectedMerchant,
+    tierFilter,
+    setTierFilter,
     isLoading,
-    error,
-    refetch: fetchMerchants,
+    error: error ? (error as any).message : null,
+    refetch: () => {
+      refetch();
+    },
   };
 }

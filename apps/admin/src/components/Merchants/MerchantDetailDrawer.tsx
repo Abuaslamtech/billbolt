@@ -101,11 +101,11 @@ export const MerchantDetailDrawer: React.FC<MerchantDetailDrawerProps> = ({
       {/* Branches & Stores */}
       <div className="space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-wider text-bolt-slate">
-          Registered Store Branches ({merchant.stores.length})
+          Registered Store Branches ({merchant.stores?.length ?? merchant.storesCount})
         </h3>
 
         <div className="space-y-2">
-          {merchant.stores.map((store) => (
+          {(merchant.stores || []).map((store) => (
             <div
               key={store.id}
               className="p-3.5 rounded-xl border border-bolt-border bg-bolt-surface flex items-center justify-between"
@@ -121,8 +121,8 @@ export const MerchantDetailDrawer: React.FC<MerchantDetailDrawerProps> = ({
               )}
             </div>
           ))}
-          {merchant.stores.length === 0 && (
-            <p className="text-xs text-bolt-slate py-2">No separate branch locations configured.</p>
+          {(!merchant.stores || merchant.stores.length === 0) && (
+            <p className="text-xs text-bolt-slate py-2">Primary store outlet configured.</p>
           )}
         </div>
       </div>

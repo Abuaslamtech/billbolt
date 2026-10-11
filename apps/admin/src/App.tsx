@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Sidebar } from './components/Sidebar';
-import { Header } from './components/Header';
+import { Sidebar } from './components/layout/Sidebar';
+import { TopNav } from './components/layout/TopNav';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { MerchantsScreen } from './screens/MerchantsScreen';
 import { ReceiptsScreen } from './screens/ReceiptsScreen';
@@ -45,17 +45,18 @@ export default function App() {
       <Sidebar
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        userEmail={currentUser?.email || 'admin@billbolt.com'}
+        userEmail={currentUser?.email}
         userRole={currentUser?.role || 'ADMIN'}
         onLogout={handleLogout}
       />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <Header
+        <TopNav
           activeTab={activeTab}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          userRole={currentUser?.role || 'ADMIN'}
         />
 
         <main className="flex-1 p-8 max-w-7xl w-full mx-auto">

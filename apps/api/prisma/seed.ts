@@ -7,13 +7,14 @@ dotenv.config();
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@billbolt.com').trim().toLowerCase();
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const adminPassword = process.env.ADMIN_PASSWORD;
   const adminName = process.env.ADMIN_NAME || 'Billbolt Administrator';
 
-  if (!adminPassword) {
-    console.error('❌ Security Error: ADMIN_PASSWORD environment variable is required.');
-    console.error('   To prevent leaking credentials in Git, store your password in apps/api/.env:');
+  if (!adminEmail || !adminPassword) {
+    console.error('❌ Security Error: Both ADMIN_EMAIL and ADMIN_PASSWORD environment variables are required.');
+    console.error('   To prevent leaking credentials in Git, store your credentials in apps/api/.env:');
+    console.error('   ADMIN_EMAIL="admin@yourdomain.com"');
     console.error('   ADMIN_PASSWORD="your-strong-password"');
     console.error('   Then re-run: pnpm --filter @billbolt/api seed\n');
     process.exit(1);
@@ -22,11 +23,6 @@ async function main() {
   console.log(`🌱 Seeding admin account: ${adminEmail}...`);
 
   const passwordHash = await bcrypt.hash(adminPassword, 10);
-
-  // Clean up legacy test admin if present
-  await prisma.user.deleteMany({
-    where: { email: 'admin@billbolt.ng' },
-  });
 
   const admin = await prisma.user.upsert({
     where: { email: adminEmail },

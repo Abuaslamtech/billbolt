@@ -35,6 +35,16 @@ module.exports = {
         poppins: ["Poppins", "system-ui", "-apple-system", "sans-serif"],
         inter: ["Inter", "system-ui", "-apple-system", "sans-serif"],
       },
+      fontSize: {
+        "2xs": ["10px", { lineHeight: "14px" }],
+        xs: ["12px", { lineHeight: "16px" }],
+        sm: ["13px", { lineHeight: "18px" }],
+        base: ["14px", { lineHeight: "20px" }],
+        lg: ["16px", { lineHeight: "24px" }],
+        xl: ["18px", { lineHeight: "26px" }],
+        "2xl": ["22px", { lineHeight: "28px" }],
+        "3xl": ["28px", { lineHeight: "34px" }],
+      },
       borderRadius: {
         "bolt-sm": "8px",
         "bolt": "12px",

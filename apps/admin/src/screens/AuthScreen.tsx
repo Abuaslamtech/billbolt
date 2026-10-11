@@ -80,7 +80,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-2xs font-bold uppercase tracking-wider text-bolt-slate mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-bolt-slate mb-1.5">
               Email Address
             </label>
             <div className="relative">
@@ -90,14 +90,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@billbolt.com"
+                placeholder="name@company.com"
                 className="w-full pl-9 pr-4 py-2.5 rounded-xl text-xs bg-bolt-surface border border-bolt-border text-bolt-graphite placeholder:text-bolt-slate/70 focus:outline-none focus:ring-2 focus:ring-bolt-blue/20 focus:border-bolt-blue transition-all"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-2xs font-bold uppercase tracking-wider text-bolt-slate mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-bolt-slate mb-1.5">
               Password
             </label>
             <div className="relative">
