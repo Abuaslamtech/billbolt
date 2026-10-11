@@ -37,6 +37,25 @@ export interface Product {
   updatedAt: string | Date;
 }
 
+export interface Store {
+  id: string;
+  businessId: string;
+  name: string;
+  location?: string | null;
+  isDefault: boolean;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
+export interface StoreStock {
+  id: string;
+  storeId: string;
+  productId: string;
+  openingStock: number;
+  reorderLevel: number;
+  currentStock?: number;
+}
+
 export interface SaleItem {
   id?: string;
   productId: string;

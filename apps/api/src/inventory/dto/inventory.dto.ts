@@ -40,6 +40,10 @@ export class CreateProductDto {
   @IsInt()
   @Min(0)
   reorderLevel: number;
+
+  @IsOptional()
+  @IsString()
+  storeId?: string;
 }
 
 export class UpdateProductDto {
@@ -97,4 +101,8 @@ export class CreateRestockDto {
   @IsString()
   @MaxLength(500)
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  storeId?: string;
 }

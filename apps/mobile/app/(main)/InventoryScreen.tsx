@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -14,8 +15,10 @@ import PackageReceiveIcon from '@hugeicons/core-free-icons/PackageReceiveIcon';
 import Alert02Icon from '@hugeicons/core-free-icons/Alert02Icon';
 import Package01Icon from '@hugeicons/core-free-icons/Package01Icon';
 import CancelCircleIcon from '@hugeicons/core-free-icons/CancelCircleIcon';
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
 import ArrowDown01Icon from '@hugeicons/core-free-icons/ArrowDown01Icon';
 import QrCode01Icon from '@hugeicons/core-free-icons/QrCode01Icon';
+import Store01Icon from '@hugeicons/core-free-icons/Store01Icon';
 
 import Header from "@/components/Header";
 import StockOverviewCard from "@/components/Inventory/StockOverviewCard";
@@ -49,6 +52,9 @@ export default function InventoryScreen() {
     handleRefresh,
     isInitialLoading,
     fmt,
+    stores,
+    selectedStoreId,
+    setSelectedStoreId,
     isAddModalVisible,
     setIsAddModalVisible,
     openAddModal,
@@ -58,6 +64,7 @@ export default function InventoryScreen() {
 
   const [selectedQrProduct, setSelectedQrProduct] = useState<ProductWithStock | null>(null);
   const [isQrModalVisible, setIsQrModalVisible] = useState(false);
+  const [breakdownProduct, setBreakdownProduct] = useState<ProductWithStock | null>(null);
 
   const isHealthy = lowStockCount === 0 && outOfStockCount === 0;
 
@@ -77,6 +84,77 @@ export default function InventoryScreen() {
         }
         contentContainerStyle={{ paddingBottom: 96, paddingTop: 16 }}
       >
+        {/* ── 0. Store Filter Chips (Only rendered when > 1 store exists) ── */}
+        {stores.length > 1 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="flex-row mb-3.5"
+            contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}
+          >
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => {
+                Haptics.selectionAsync();
+                setSelectedStoreId("all");
+              }}
+              className={`px-3 py-1.5 rounded-full border flex-row items-center gap-1.5 ${
+                selectedStoreId === "all"
+                  ? "bg-bolt-blue border-bolt-blue shadow-2xs"
+                  : "bg-bolt-card border-bolt-border"
+              }`}
+            >
+              <HugeiconsIcon
+                icon={Store01Icon}
+                size={13}
+                color={selectedStoreId === "all" ? "#FFFFFF" : Colors.slate}
+              />
+              <Text
+                className={`text-xs font-inter-semibold ${
+                  selectedStoreId === "all" ? "text-white" : "text-bolt-slate"
+                }`}
+              >
+                All Stores
+              </Text>
+            </TouchableOpacity>
+
+            {stores.map((st) => {
+              const isSelected = selectedStoreId === st.id;
+              const hasLowStock = (st.lowStockCount ?? 0) > 0;
+              return (
+                <TouchableOpacity
+                  key={st.id}
+                  activeOpacity={0.75}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setSelectedStoreId(st.id);
+                  }}
+                  className={`px-3 py-1.5 rounded-full border flex-row items-center gap-1.5 ${
+                    isSelected
+                      ? "bg-bolt-blue border-bolt-blue shadow-2xs"
+                      : "bg-bolt-card border-bolt-border"
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-inter-semibold ${
+                      isSelected ? "text-white" : "text-bolt-graphite"
+                    }`}
+                  >
+                    {st.name}
+                  </Text>
+                  {hasLowStock && (
+                    <View
+                      className={`w-2 h-2 rounded-full ${
+                        isSelected ? "bg-amber-300" : "bg-amber-500"
+                      }`}
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
+
         {/* ── 1. Context First: Signature Stock Overview Card ─────────── */}
         <StockOverviewCard
           totalProductsCount={totalProductsCount}
@@ -249,7 +327,7 @@ export default function InventoryScreen() {
                         {product.name}
                       </Text>
 
-                      <View className="flex-row items-center gap-1.5 mt-0.5">
+                      <View className="flex-row items-center gap-1.5 mt-0.5 flex-wrap">
                         <Text className="font-inter text-xs text-bolt-slate" numberOfLines={1}>
                           {product.category || "General"}
                         </Text>
@@ -268,6 +346,20 @@ export default function InventoryScreen() {
                               ? `${product.currentStock} left (Reorder at ${product.reorderLevel || 5})`
                               : `${product.currentStock} in stock`}
                         </Text>
+                        {stores.length > 1 && selectedStoreId === "all" && (product.storeBreakdown?.length ?? 0) > 1 && (
+                          <TouchableOpacity
+                            onPress={(e) => {
+                              e.stopPropagation?.();
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                              setBreakdownProduct(product);
+                            }}
+                            className="bg-blue-50 border border-blue-200/80 rounded px-1.5 py-0.5 ml-0.5 active:bg-blue-100"
+                          >
+                            <Text className="text-2xs font-inter-semibold text-bolt-blue">
+                              {product.storeBreakdown?.length} stores ▾
+                            </Text>
+                          </TouchableOpacity>
+                        )}
                       </View>
                     </View>
 
@@ -343,6 +435,89 @@ export default function InventoryScreen() {
           setSelectedQrProduct(null);
         }}
       />
+
+      {/* Store Stock Breakdown Modal */}
+      <Modal
+        visible={!!breakdownProduct}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setBreakdownProduct(null)}
+      >
+        <View className="flex-1 justify-center bg-black/50 px-5">
+          <View className="bg-bolt-card rounded-3xl p-5 border border-bolt-border shadow-xl">
+            <View className="flex-row items-center justify-between pb-3 border-b border-bolt-border mb-3.5">
+              <View className="flex-1 pr-2">
+                <Text className="text-base font-poppins-semibold text-bolt-graphite" numberOfLines={1}>
+                  {breakdownProduct?.name}
+                </Text>
+                <Text className="text-xs font-inter text-bolt-slate">
+                  Stock by Storage Location
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setBreakdownProduct(null)}
+                className="w-8 h-8 rounded-full bg-bolt-surface items-center justify-center"
+              >
+                <HugeiconsIcon icon={Cancel01Icon} size={16} color={Colors.slate} />
+              </TouchableOpacity>
+            </View>
+
+            <View className="gap-2 mb-4">
+              {breakdownProduct?.storeBreakdown?.map((item) => {
+                const isOut = item.currentStock <= 0;
+                const isLow = !isOut && item.currentStock <= item.reorderLevel;
+                return (
+                  <View
+                    key={item.storeId}
+                    className="flex-row items-center justify-between p-3 rounded-xl bg-bolt-surface border border-bolt-border"
+                  >
+                    <View className="flex-1 pr-2">
+                      <View className="flex-row items-center gap-1.5">
+                        <Text className="text-sm font-inter-semibold text-bolt-graphite">
+                          {item.storeName}
+                        </Text>
+                        {item.isDefault && (
+                          <View className="bg-blue-50 rounded px-1.5 py-0.5">
+                            <Text className="text-3xs font-inter-bold text-bolt-blue uppercase">
+                              Primary
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                    <View className="items-end">
+                      <Text
+                        className={`text-sm font-inter-bold ${
+                          isOut
+                            ? "text-bolt-danger-text"
+                            : isLow
+                            ? "text-bolt-warning-text"
+                            : "text-bolt-graphite"
+                        }`}
+                      >
+                        {item.currentStock} units
+                      </Text>
+                      {isLow && (
+                        <Text className="text-3xs font-inter-medium text-amber-600">
+                          Reorder at {item.reorderLevel}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+
+            <Button
+              label="Close"
+              variant="secondary"
+              size="md"
+              fullWidth
+              onPress={() => setBreakdownProduct(null)}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

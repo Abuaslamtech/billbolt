@@ -88,7 +88,18 @@ export class ReceiptService {
       profit: number;
       customerName: string;
       createdAt: Date;
+      storeId?: string;
     }> = [];
+
+    // Resolve target fulfillment store
+    let targetStoreId = dto.storeId?.trim();
+    if (!targetStoreId && this.prisma.store?.findFirst) {
+      const defaultStore = await this.prisma.store.findFirst({
+        where: { businessId, isDefault: true },
+        select: { id: true },
+      });
+      targetStoreId = defaultStore?.id;
+    }
 
     let subtotal = 0;
 
@@ -121,6 +132,7 @@ export class ReceiptService {
         businessId,
         productId: product.id,
         productName: product.name,
+        storeId: targetStoreId,
         date: dateStr,
         cycle,
         qty: itemQty,

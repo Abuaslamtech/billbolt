@@ -9,6 +9,7 @@ import {
   CycleSummary,
   DebtorCustomerSummary,
   DebtRepayment,
+  Store,
 } from '@/types/models';
 import {
   initializeStorage,
@@ -16,6 +17,10 @@ import {
   getSales,
   getRestocks,
   getReceipts,
+  getStores,
+  createStore,
+  updateStore,
+  deleteStore,
   addProduct,
   addRestock,
   createReceipt,
@@ -48,10 +53,23 @@ interface AppDataState {
   frequentProducts: ProductWithStock[];
   cycleSummaries: CycleSummary[];
   debtors: DebtorCustomerSummary[];
+  stores: Store[];
+  selectedStoreId: string;
 
   // Actions
   init: () => Promise<void>;
   refresh: () => Promise<void>;
+  setSelectedStoreId: (storeId: string) => Promise<void>;
+  addNewStore: (input: {
+    name: string;
+    location?: string;
+    isDefault?: boolean;
+  }) => Promise<Store>;
+  editStore: (
+    storeId: string,
+    input: { name?: string; location?: string; isDefault?: boolean },
+  ) => Promise<Store>;
+  removeStore: (storeId: string) => Promise<void>;
   addNewProduct: (input: {
     name: string;
     category?: string;
@@ -60,12 +78,14 @@ interface AppDataState {
     sellingPrice: number;
     openingStock: number;
     reorderLevel: number;
+    storeId?: string;
   }) => Promise<ProductWithStock>;
   logNewRestock: (input: {
     productId: string;
     qty: number;
     costPerUnit: number;
     notes?: string;
+    storeId?: string;
   }) => Promise<void>;
   createNewReceipt: (input: {
     customerName: string;
@@ -78,6 +98,7 @@ interface AppDataState {
     notes?: string;
     date?: string;
     discount?: number;
+    storeId?: string;
   }) => Promise<Receipt>;
   recordRepayment: (input: {
     receiptId?: string;
@@ -105,6 +126,8 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
   frequentProducts: [],
   cycleSummaries: [],
   debtors: [],
+  stores: [],
+  selectedStoreId: 'all',
 
   init: async () => {
     try {
@@ -120,9 +143,10 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
 
   refresh: async () => {
     try {
+      const selectedStore = get().selectedStoreId;
       const results = await Promise.allSettled([
         getBusinessInfo(),
-        getProductsWithStock(),
+        getProductsWithStock(selectedStore === 'all' ? undefined : selectedStore),
         getSales(),
         getRestocks(),
         getReceipts(),
@@ -130,6 +154,7 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
         getProductPerformanceList(),
         getMonthlyCycleSummaries(),
         getUserProfile(),
+        getStores(),
       ]);
 
       const [
@@ -141,6 +166,8 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
         metricsRes,
         topProductsRes,
         cycleSummariesRes,
+        userProfileRes,
+        storesRes,
       ] = results;
 
       const current = get();
@@ -150,6 +177,7 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
       const sales = salesRes.status === 'fulfilled' ? salesRes.value : current.sales;
       const restocks = restocksRes.status === 'fulfilled' ? restocksRes.value : current.restocks;
       const receipts = receiptsRes.status === 'fulfilled' ? receiptsRes.value : current.receipts;
+      const stores = storesRes.status === 'fulfilled' ? storesRes.value : current.stores;
       let metrics = metricsRes.status === 'fulfilled' && metricsRes.value ? metricsRes.value : current.metrics;
       let topProducts = topProductsRes.status === 'fulfilled' && topProductsRes.value ? topProductsRes.value : current.topProducts;
       let cycleSummaries = cycleSummariesRes.status === 'fulfilled' && cycleSummariesRes.value ? cycleSummariesRes.value : current.cycleSummaries;
@@ -420,6 +448,7 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
         restocks,
         receipts,
         debtors,
+        stores,
         metrics,
         topProducts,
         frequentProducts,
@@ -428,6 +457,36 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
     } catch (error) {
       console.error('Failed to refresh data store:', error);
     }
+  },
+
+  setSelectedStoreId: async (storeId: string) => {
+    set({ selectedStoreId: storeId });
+    const products = await getProductsWithStock(storeId === 'all' ? undefined : storeId);
+    set({ products });
+  },
+
+  addNewStore: async (input) => {
+    const store = await createStore(input);
+    const stores = await getStores();
+    set({ stores });
+    return store;
+  },
+
+  editStore: async (storeId, input) => {
+    const store = await updateStore(storeId, input);
+    const stores = await getStores();
+    set({ stores });
+    return store;
+  },
+
+  removeStore: async (storeId) => {
+    await deleteStore(storeId);
+    const stores = await getStores();
+    const currentSelected = get().selectedStoreId;
+    if (currentSelected === storeId) {
+      set({ selectedStoreId: 'all' });
+    }
+    set({ stores });
   },
 
   addNewProduct: async (input) => {
@@ -468,6 +527,8 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
       restocks: [],
       receipts: [],
       debtors: [],
+      stores: [],
+      selectedStoreId: 'all',
       metrics: null,
       topProducts: [],
       frequentProducts: [],

@@ -17,6 +17,7 @@ import {
   Sale,
   DebtRepayment,
   DebtorCustomerSummary,
+  Store,
 } from '@/types/models';
 import {
   BusinessInfo,
@@ -27,11 +28,13 @@ import {
   getCachedRestocks,
   getCachedSales,
   getCachedRepayments,
+  getCachedStores,
   setCachedBusinessInfo,
   setCachedProducts,
   setCachedReceipts,
   setCachedRestocks,
   setCachedSales,
+  setCachedStores,
   createOfflineProduct,
   createOfflineReceipt,
   createOfflineRestock,
@@ -124,20 +127,69 @@ export async function saveBusinessInfo(info: Partial<BusinessInfo>): Promise<Bus
   return local;
 }
 
-// ─── Products ─────────────────────────────────────────────────────────────────
+// ─── Products & Stores ────────────────────────────────────────────────────────
+
+export async function getStores(): Promise<Store[]> {
+  const isOnline = useSyncStore.getState().isOnline;
+  if (!isOnline) return getCachedStores();
+
+  try {
+    const { data } = await apiClient.get('/stores');
+    if (Array.isArray(data)) {
+      await setCachedStores(data);
+      return data;
+    }
+    return getCachedStores();
+  } catch (err) {
+    return getCachedStores();
+  }
+}
+
+export async function createStore(input: {
+  name: string;
+  location?: string;
+  isDefault?: boolean;
+}): Promise<Store> {
+  const { data } = await apiClient.post('/stores', input);
+  const cached = await getCachedStores();
+  const updated = [data, ...cached.filter((s) => s.id !== data.id)];
+  await setCachedStores(updated);
+  return data;
+}
+
+export async function updateStore(
+  storeId: string,
+  input: { name?: string; location?: string; isDefault?: boolean },
+): Promise<Store> {
+  const { data } = await apiClient.patch(`/stores/${storeId}`, input);
+  const cached = await getCachedStores();
+  const updated = cached.map((s) => (s.id === storeId ? { ...s, ...data } : s));
+  await setCachedStores(updated);
+  return data;
+}
+
+export async function deleteStore(storeId: string): Promise<void> {
+  await apiClient.delete(`/stores/${storeId}`);
+  const cached = await getCachedStores();
+  await setCachedStores(cached.filter((s) => s.id !== storeId));
+}
 
 export async function getProducts(): Promise<Product[]> {
   return getProductsWithStock();
 }
 
-export async function getProductsWithStock(): Promise<ProductWithStock[]> {
+export async function getProductsWithStock(storeId?: string): Promise<ProductWithStock[]> {
   const isOnline = useSyncStore.getState().isOnline;
   if (!isOnline) return getCachedProducts();
 
   try {
-    const { data } = await apiClient.get('/inventory/products');
+    const { data } = await apiClient.get('/inventory/products', {
+      params: storeId && storeId !== 'all' ? { storeId } : undefined,
+    });
     if (Array.isArray(data)) {
-      await setCachedProducts(data);
+      if (!storeId || storeId === 'all') {
+        await setCachedProducts(data);
+      }
       return data;
     }
     return getCachedProducts();

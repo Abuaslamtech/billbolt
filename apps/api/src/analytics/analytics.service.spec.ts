@@ -9,6 +9,7 @@ describe('AnalyticsService', () => {
       aggregate: jest.Mock;
       count: jest.Mock;
       findMany: jest.Mock;
+      groupBy: jest.Mock;
     };
     sale: {
       groupBy: jest.Mock;
@@ -28,6 +29,7 @@ describe('AnalyticsService', () => {
         aggregate: jest.fn(),
         count: jest.fn(),
         findMany: jest.fn(),
+        groupBy: jest.fn().mockResolvedValue([]),
       },
       sale: {
         groupBy: jest.fn(),

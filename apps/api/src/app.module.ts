@@ -10,6 +10,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { PrismaClientExceptionFilter } from './common/filters/prisma-client-exception.filter';
 import { InventoryModule } from './inventory/inventory.module';
 import { ReceiptModule } from './receipt/receipt.module';
+import { StoresModule } from './stores/stores.module';
 import { SyncModule } from './sync/sync.module';
 import { UsersModule } from './users/users.module';
 
@@ -21,6 +22,7 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     UsersModule,
     BusinessModule,
+    StoresModule,
     ReceiptModule,
     InventoryModule,
     AnalyticsModule,

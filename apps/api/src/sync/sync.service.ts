@@ -24,6 +24,12 @@ export class SyncService {
     }
 
     return this.prisma.$transaction(async (tx) => {
+      const defaultStore = tx.store?.findFirst
+        ? await tx.store.findFirst({
+            where: { businessId, isDefault: true },
+          })
+        : null;
+
       const productIdMap = new Map<string, string>();
       const syncedProductIds: Record<string, string> = {};
       const syncedRestockTempIds: string[] = [];
@@ -52,6 +58,17 @@ export class SyncService {
                 reorderLevel: p.reorderLevel,
               },
             });
+
+            if (defaultStore) {
+              await tx.storeStock.create({
+                data: {
+                  storeId: defaultStore.id,
+                  productId: product.id,
+                  openingStock: p.openingStock,
+                  reorderLevel: p.reorderLevel,
+                },
+              });
+            }
           }
 
           productIdMap.set(p.clientTempId, product.id);
@@ -88,6 +105,7 @@ export class SyncService {
               businessId,
               productId: product.id,
               productName: product.name,
+              storeId: defaultStore?.id,
               date: dateStr,
               cycle,
               qty: r.qty,
@@ -191,6 +209,7 @@ export class SyncService {
             profit: number;
             customerName: string;
             createdAt: Date;
+            storeId?: string;
           }> = [];
 
           for (const item of mappedItems) {
@@ -225,6 +244,7 @@ export class SyncService {
               businessId,
               productId: product.id,
               productName: product.name,
+              storeId: defaultStore?.id,
               date: dateStr,
               cycle,
               qty: itemQty,

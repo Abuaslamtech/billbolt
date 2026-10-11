@@ -91,6 +91,10 @@ export class CreateReceiptDto {
   @IsNumber()
   @Min(0)
   discount?: number;
+
+  @IsOptional()
+  @IsString()
+  storeId?: string;
 }
 
 export class RecordRepaymentDto {

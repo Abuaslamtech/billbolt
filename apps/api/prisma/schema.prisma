@@ -88,6 +88,7 @@ model Business {
   restocks Restock[]
   sales    Sale[]
   debtRepayments DebtRepayment[]
+  stores   Store[]
 }
 
 // ─── Receipts ─────────────────────────────────────────────────────────────────
@@ -150,6 +151,40 @@ model ReceiptItem {
   @@index([productId])
 }
 
+// ─── Stores & Warehouses ──────────────────────────────────────────────────────
+
+model Store {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  location   String?
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  stocks     StoreStock[]
+  sales      Sale[]
+  restocks   Restock[]
+
+  @@index([businessId])
+}
+
+model StoreStock {
+  id           String   @id @default(cuid())
+  storeId      String
+  productId    String
+  openingStock Int      @default(0)
+  reorderLevel Int      @default(5)
+
+  store        Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, productId])
+  @@index([storeId])
+  @@index([productId])
+}
+
 // ─── Inventory ────────────────────────────────────────────────────────────────
 
 model Product {
@@ -167,8 +202,9 @@ model Product {
   businessId String
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  sales    Sale[]
-  restocks Restock[]
+  sales       Sale[]
+  restocks    Restock[]
+  storeStocks StoreStock[]
 
   @@index([businessId])
   @@index([businessId, qrCode])
@@ -189,11 +225,15 @@ model Restock {
   productId   String
   productName String
   product     Product  @relation(fields: [productId], references: [id])
+  storeId     String?
+  store       Store?   @relation(fields: [storeId], references: [id], onDelete: SetNull)
 
   @@index([businessId, createdAt])
   @@index([businessId, productId])
   @@index([businessId, cycle])
+  @@index([businessId, storeId])
   @@index([productId])
+  @@index([storeId])
 }
 
 // ─── Sales ────────────────────────────────────────────────────────────────────
@@ -220,13 +260,17 @@ model Sale {
   product     Product  @relation(fields: [productId], references: [id])
   receiptId   String?
   receipt     Receipt? @relation(fields: [receiptId], references: [id])
+  storeId     String?
+  store       Store?   @relation(fields: [storeId], references: [id], onDelete: SetNull)
 
   @@index([businessId, createdAt])
   @@index([businessId, date])
   @@index([businessId, productId])
   @@index([businessId, cycle])
+  @@index([businessId, storeId])
   @@index([productId])
   @@index([receiptId])
+  @@index([storeId])
 }
 
 model DebtRepayment {

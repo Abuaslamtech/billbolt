@@ -32,9 +32,12 @@ export class InventoryController {
 
   /** All products with computed stock levels for the authenticated business */
   @Get('products')
-  async getProductsWithStock(@GetUser() user: JwtPayload) {
+  async getProductsWithStock(
+    @GetUser() user: JwtPayload,
+    @Query('storeId') storeId?: string,
+  ) {
     const businessId = await resolveBusinessId(this.prisma, user);
-    return this.inventoryService.getProductsWithStock(businessId);
+    return this.inventoryService.getProductsWithStock(businessId, storeId);
   }
 
   /** Create a new product */

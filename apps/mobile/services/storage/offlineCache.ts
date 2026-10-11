@@ -9,6 +9,7 @@ import {
   StockStatus,
   DebtRepayment,
   PaymentStatus,
+  Store,
 } from "@/types/models";
 import {
   cycleKey,
@@ -47,6 +48,7 @@ const KEYS = {
   REPAYMENTS: "@billbolt_cache_repayments",
   BUSINESS: "@billbolt_cache_business",
   METRICS: "@billbolt_cache_metrics",
+  STORES: "@billbolt_cache_stores",
 };
 
 // ─── Generic JSON Storage Helpers ─────────────────────────────────────────────
@@ -130,6 +132,14 @@ export async function setCachedMetrics(
   metrics: DashboardMetrics,
 ): Promise<void> {
   await save(KEYS.METRICS, metrics);
+}
+
+export async function getCachedStores(): Promise<Store[]> {
+  return load<Store[]>(KEYS.STORES, []);
+}
+
+export async function setCachedStores(stores: Store[]): Promise<void> {
+  await save(KEYS.STORES, stores);
 }
 
 // ─── Local Stock Recalculation Helper ─────────────────────────────────────────

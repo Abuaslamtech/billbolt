@@ -36,6 +36,12 @@ export default function DropdownMenu({ onClose }: DropdownMenuProps) {
       color: Colors.slate,
     },
     {
+      icon: Store01Icon,
+      label: "Stores & Warehouses",
+      onPress: () => navigate("/StoresScreen"),
+      color: Colors.slate,
+    },
+    {
       icon: Analytics01Icon,
       label: "Business Reports",
       onPress: () => navigate("/ReportScreen"),

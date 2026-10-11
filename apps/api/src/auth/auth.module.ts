@@ -6,6 +6,7 @@ import { PrismaModule } from 'prisma/prisma.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt.guard';
+import { RolesGuard } from './guards/roles.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleAuthService } from './google-auth.service';
 
@@ -24,7 +25,7 @@ import { GoogleAuthService } from './google-auth.service';
     PrismaModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, GoogleAuthService, JwtStrategy, JwtAuthGuard],
-  exports: [AuthService, JwtAuthGuard, JwtStrategy, JwtModule],
+  providers: [AuthService, GoogleAuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
+  exports: [AuthService, JwtAuthGuard, RolesGuard, JwtStrategy, JwtModule],
 })
 export class AuthModule {}

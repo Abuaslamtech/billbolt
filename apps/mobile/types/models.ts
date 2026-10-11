@@ -12,11 +12,34 @@ export interface Product {
   createdAt: string;
 }
 
+export interface StoreBreakdownItem {
+  storeId: string;
+  storeName: string;
+  isDefault: boolean;
+  currentStock: number;
+  reorderLevel: number;
+}
+
+export interface Store {
+  id: string;
+  businessId?: string;
+  name: string;
+  location?: string | null;
+  isDefault: boolean;
+  productCount?: number;
+  totalStockUnits?: number;
+  lowStockCount?: number;
+  outOfStockCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface ProductWithStock extends Product {
   totalSold: number;
   totalRestocked: number;
   currentStock: number;
   status: StockStatus;
+  storeBreakdown?: StoreBreakdownItem[];
 }
 
 export interface Sale {
@@ -35,6 +58,7 @@ export interface Sale {
   profit: number;
   receiptId?: string;
   customerName?: string;
+  storeId?: string;
   createdAt: string;
 }
 
@@ -48,6 +72,7 @@ export interface Restock {
   costPerUnit: number;
   totalCost: number;
   notes?: string;
+  storeId?: string;
   createdAt: string;
 }
 

@@ -117,6 +117,10 @@ export function useInventoryScreen() {
     handleRefresh,
     isInitialLoading: !isInitialized || (isLoading && products.length === 0),
     fmt: formatCurrency,
+    // Stores
+    stores: useAppDataStore((state) => state.stores),
+    selectedStoreId: useAppDataStore((state) => state.selectedStoreId),
+    setSelectedStoreId: useAppDataStore((state) => state.setSelectedStoreId),
     // Modals & Navigation
     isAddModalVisible,
     setIsAddModalVisible,

@@ -91,12 +91,12 @@ describe('InventoryService', () => {
       const result = await service.getProductsWithStock('biz_1');
 
       expect(prisma.restock.groupBy).toHaveBeenCalledWith({
-        by: ['productId'],
+        by: ['productId', 'storeId'],
         where: { businessId: 'biz_1' },
         _sum: { qty: true },
       });
       expect(prisma.sale.groupBy).toHaveBeenCalledWith({
-        by: ['productId'],
+        by: ['productId', 'storeId'],
         where: { businessId: 'biz_1' },
         _sum: { qty: true },
       });
